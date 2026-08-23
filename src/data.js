@@ -1,184 +1,115 @@
-const art = (cardId) => `https://art.hearthstonejson.com/v1/256x/${cardId}.jpg`;
+const art = (id) => `https://art.hearthstonejson.com/v1/256x/${id}.jpg`;
+const m = (id, name, tribe, tier, attack, health, text, extra = {}) => ({ id, cardId: id, name, tribe, tribes: extra.tribes || [tribe], tier, attack, health, text, imageUrl: art(id), ...extra });
+const s = (id, name, tier, text, script, extra = {}) => ({ id, cardId: id, kind: "SPELL", name, tier, text, script, imageUrl: art(id), ...extra });
 
 export const DATA_SNAPSHOT = {
-  source: "HearthstoneJSON",
-  locale: "zhCN",
+  source: "HearthstoneJSON latest/zhCN/cards.json",
   retrievedAt: "2026-08-23",
-  note: "仅用于内部玩法研究，不包含于仓库，不授权公开发行。",
+  pool: "单人酒馆战棋：亡灵21张、龙22张",
+  note: "私有玩法研究快照，不随线上版本自动漂移。",
 };
 
 export const TRIBES = {
-  MECH: { name: "机械", icon: "⚙" },
   UNDEAD: { name: "亡灵", icon: "☠" },
-  BEAST: { name: "野兽", icon: "爪" },
   DRAGON: { name: "龙", icon: "龙" },
-  ELEMENTAL: { name: "元素", icon: "焰" },
-  NAGA: { name: "纳迦", icon: "≈" },
   NEUTRAL: { name: "中立", icon: "◇" },
 };
 
 export const HEROES = [
-  {
-    id: "TB_BaconShop_HERO_57",
-    cardId: "TB_BaconShop_HERO_57",
-    name: "诺兹多姆",
-    imageUrl: art("TB_BaconShop_HERO_57"),
-    tag: "洞察未来",
-    description: "在你的回合开始时，获得一次免费的刷新。",
-    power: "FREE_REFRESH",
-  },
-  {
-    id: "TB_BaconShop_HERO_41",
-    cardId: "TB_BaconShop_HERO_41",
-    name: "雷诺·杰克逊",
-    imageUrl: art("TB_BaconShop_HERO_41"),
-    tag: "要发财了！",
-    description: "每局对战限一次。使一个友方随从变为金色。",
-    power: "GOLDEN_TOUCH",
-  },
-  {
-    id: "TB_BaconShop_HERO_08",
-    cardId: "TB_BaconShop_HERO_08",
-    name: "伊利丹·怒风",
-    imageUrl: art("TB_BaconShop_HERO_08"),
-    tag: "左膀右臂",
-    description: "战斗开始时：你最左边和最右边的随从获得+2/+1并立即发起攻击。",
-    power: "EDGE_ASSAULT",
-  },
+  { id: "TB_BaconShop_HERO_57", cardId: "TB_BaconShop_HERO_57", name: "诺兹多姆", imageUrl: art("TB_BaconShop_HERO_57"), tag: "洞察未来", description: "在你的回合开始时，获得一次免费的刷新。", power: "FREE_REFRESH" },
+  { id: "TB_BaconShop_HERO_41", cardId: "TB_BaconShop_HERO_41", name: "雷诺·杰克逊", imageUrl: art("TB_BaconShop_HERO_41"), tag: "要发财了！", description: "每局对战限一次。使一个友方随从变为金色。", power: "GOLDEN_TOUCH" },
+  { id: "TB_BaconShop_HERO_08", cardId: "TB_BaconShop_HERO_08", name: "伊利丹·怒风", imageUrl: art("TB_BaconShop_HERO_08"), tag: "左膀右臂", description: "战斗开始时：你最左边和最右边的随从获得+2/+1并立即攻击。", power: "EDGE_ASSAULT" },
 ];
 
-export const MINIONS = [
-  {
-    id: "BG25_001", cardId: "BG25_001", name: "复活的骑兵", tribe: "UNDEAD", tier: 1, attack: 2, health: 1,
-    imageUrl: art("BG25_001"), keywords: ["TAUNT", "REBORN"], text: "嘲讽，复生",
-  },
-  {
-    id: "BG28_300", cardId: "BG28_300", name: "无害的骨颅", tribe: "UNDEAD", tier: 1, attack: 1, health: 1,
-    imageUrl: art("BG28_300"), text: "亡语：召唤两个1/1的骷髅。",
-    effect: { trigger: "DEATHRATTLE", action: "SUMMON_TOKEN", token: "skeleton", count: 2 },
-  },
-  {
-    id: "BG29_611", cardId: "BG29_611", name: "拔线机", tribe: "MECH", tier: 1, attack: 1, health: 1,
-    imageUrl: art("BG29_611"), keywords: ["DIVINE_SHIELD"], text: "圣盾。亡语：召唤一个1/1的微型机器人。",
-    effect: { trigger: "DEATHRATTLE", action: "SUMMON_TOKEN", token: "microbot", count: 1 },
-  },
-  {
-    id: "BGS_119", cardId: "BGS_119", name: "爆裂飓风", tribe: "ELEMENTAL", tier: 1, attack: 2, health: 1,
-    imageUrl: art("BGS_119"), keywords: ["DIVINE_SHIELD", "WINDFURY"], text: "圣盾，风怒",
-  },
-  {
-    id: "BG23_002", cardId: "BG23_002", name: "贝类收藏家", tribe: "NAGA", tier: 2, attack: 4, health: 3,
-    imageUrl: art("BG23_002"), text: "战吼：获取一张酒馆币。",
-    effect: { trigger: "BATTLECRY", action: "GAIN_GOLD", amount: 1 },
-  },
-  {
-    id: "BG25_022", cardId: "BG25_022", name: "血色骷髅", tribe: "UNDEAD", tier: 2, attack: 2, health: 1,
-    imageUrl: art("BG25_022"), keywords: ["REBORN"], text: "复生。亡语：使一个友方亡灵获得+1/+2。",
-    effect: { trigger: "DEATHRATTLE", action: "BUFF_RANDOM_OTHER_TRIBE", tribe: "UNDEAD", attack: 1, health: 2 },
-  },
-  {
-    id: "BG26_805", cardId: "BG26_805", name: "哼鸣蜂鸟", tribe: "BEAST", tier: 2, attack: 1, health: 4,
-    imageUrl: art("BG26_805"), text: "战斗开始时：在本场战斗的剩余时间内，你的野兽拥有+1攻击力。",
-    effect: { trigger: "COMBAT_START", action: "BUFF_ALL_TRIBE", tribe: "BEAST", attack: 1, health: 0 },
-  },
-  {
-    id: "BG26_963", cardId: "BG26_963", name: "电音合成师", tribe: "DRAGON", tier: 2, attack: 3, health: 4,
-    imageUrl: art("BG26_963"), text: "战吼，战斗开始时：使你的其他龙获得+1/+1。",
-    effects: [
-      { trigger: "BATTLECRY", action: "BUFF_ALL_OTHER_TRIBE", tribe: "DRAGON", attack: 1, health: 1 },
-      { trigger: "COMBAT_START", action: "BUFF_ALL_OTHER_TRIBE", tribe: "DRAGON", attack: 1, health: 1 },
-    ],
-  },
-  {
-    id: "BG25_010", cardId: "BG25_010", name: "断手被遗忘者", tribe: "UNDEAD", tier: 3, attack: 2, health: 1,
-    imageUrl: art("BG25_010"), text: "亡语：召唤一只2/1并具有复生的手。",
-    effect: { trigger: "DEATHRATTLE", action: "SUMMON_TOKEN", token: "forgotten_hand", count: 1 },
-  },
-  {
-    id: "BG30_125", cardId: "BG30_125", name: "遗骸看管者", tribe: "UNDEAD", tier: 3, attack: 3, health: 3,
-    imageUrl: art("BG30_125"), text: "亡语：召唤三个1/1的骷髅。",
-    effect: { trigger: "DEATHRATTLE", action: "SUMMON_TOKEN", token: "skeleton", count: 3 },
-  },
-  {
-    id: "BGS_131", cardId: "BGS_131", name: "致命的孢子", tribe: "NEUTRAL", tier: 3, attack: 1, health: 1,
-    imageUrl: art("BGS_131"), keywords: ["VENOMOUS"], text: "烈毒",
-  },
-  {
-    id: "BG36_207", cardId: "BG36_207", name: "狼宝宝", tribe: "BEAST", tier: 3, attack: 3, health: 6,
-    imageUrl: art("BG36_207"), text: "进击：使你的其他随从获得+4/+1。",
-    effect: { trigger: "AFTER_ATTACK", action: "BUFF_ALL_OTHER", attack: 4, health: 1 },
-  },
-  {
-    id: "BG25_016", cardId: "BG25_016", name: "辛多雷直射手", tribe: "NEUTRAL", tier: 4, attack: 3, health: 4,
-    imageUrl: art("BG25_016"), keywords: ["WINDFURY", "DIVINE_SHIELD"], text: "风怒，圣盾。进击：移除目标的复生和嘲讽。",
-    effect: { trigger: "BEFORE_ATTACK", action: "REMOVE_TARGET_KEYWORDS", keywords: ["REBORN", "TAUNT"] },
-  },
-  {
-    id: "BG27_080", cardId: "BG27_080", name: "混编战团", tribe: "NEUTRAL", tier: 4, attack: 3, health: 3,
-    imageUrl: art("BG27_080"), keywords: ["TAUNT"], text: "嘲讽。亡语：使每个类型的各一个友方随从获得+3/+3。",
-    effect: { trigger: "DEATHRATTLE", action: "BUFF_ONE_EACH_TRIBE", attack: 3, health: 3 },
-  },
-  {
-    id: "BG36_620", cardId: "BG36_620", name: "砰砰箱", tribe: "NEUTRAL", tier: 4, attack: 5, health: 10,
-    imageUrl: art("BG36_620"), keywords: ["TAUNT"], text: "嘲讽。战斗开始时：对所有其他随从造成3点伤害。",
-    effect: { trigger: "COMBAT_START", action: "DAMAGE_ALL_OTHER", damage: 3 },
-  },
-  {
-    id: "BGS_116", cardId: "BGS_116", name: "刷新畸体", tribe: "ELEMENTAL", tier: 4, attack: 4, health: 5,
-    imageUrl: art("BGS_116"), text: "战吼：获得2次免费的刷新。",
-    effect: { trigger: "BATTLECRY", action: "GAIN_FREE_REFRESHES", amount: 2 },
-  },
-  {
-    id: "BG25_354", cardId: "BG25_354", name: "提图斯·瑞文戴尔", tribe: "NEUTRAL", tier: 5, attack: 1, health: 7,
-    imageUrl: art("BG25_354"), text: "你的亡语额外触发一次。", aura: "DOUBLE_DEATHRATTLES",
-  },
-  {
-    id: "BG26_ICC_901", cardId: "BG26_ICC_901", name: "达卡莱附魔师", tribe: "NEUTRAL", tier: 5, attack: 1, health: 5,
-    imageUrl: art("BG26_ICC_901"), text: "你的回合结束效果会触发两次。", aura: "DOUBLE_END_TURN",
-  },
-  {
-    id: "BG_LOE_077", cardId: "BG_LOE_077", name: "布莱恩·铜须", tribe: "NEUTRAL", tier: 5, attack: 2, health: 4,
-    imageUrl: art("BG_LOE_077"), text: "你的战吼会触发两次。", aura: "DOUBLE_BATTLECRIES",
-  },
-  {
-    id: "BGS_041", cardId: "BGS_041", name: "奥术守护者卡雷苟斯", tribe: "DRAGON", tier: 5, attack: 4, health: 12,
-    imageUrl: art("BGS_041"), text: "在你触发一个战吼后，使你的龙获得+2/+2。", aura: "KALECGOS",
-  },
-  {
-    id: "BG25_009", cardId: "BG25_009", name: "永恒召唤者", tribe: "UNDEAD", tier: 6, attack: 8, health: 1,
-    imageUrl: art("BG25_009"), keywords: ["REBORN"], text: "复生。亡语：召唤1个永恒骑士。",
-    effect: { trigger: "DEATHRATTLE", action: "SUMMON_TOKEN", token: "eternal_knight", count: 1 },
-  },
-  {
-    id: "BG24_004", cardId: "BG24_004", name: "折跃之翼", tribe: "DRAGON", tier: 6, attack: 12, health: 4,
-    imageUrl: art("BG24_004"), keywords: ["ATTACK_IMMUNE"], text: "攻击时免疫。",
-  },
-  {
-    id: "BG32_846", cardId: "BG32_846", name: "狂放的法力涌流", tribe: "ELEMENTAL", tier: 6, attack: 6, health: 5,
-    imageUrl: art("BG32_846"), text: "在你使用一张元素牌后，使你的元素获得+4/+4。", aura: "ELEMENTAL_PLAY_BUFF",
-  },
-  {
-    id: "BGS_018", cardId: "BGS_018", name: "巨狼戈德林", tribe: "BEAST", tier: 6, attack: 8, health: 8,
-    imageUrl: art("BGS_018"), text: "亡语：直到下个回合，你的野兽拥有+8/+8。",
-    effect: { trigger: "DEATHRATTLE", action: "BUFF_ALL_TRIBE", tribe: "BEAST", attack: 8, health: 8 },
-  },
+export const UNDEAD = [
+  m("BG25_001", "复活的骑兵", "UNDEAD", 1, 2, 1, "嘲讽，复生", { keywords: ["TAUNT", "REBORN"] }),
+  m("BG25_013", "腐皮豺狼人", "UNDEAD", 1, 1, 4, "在本场战斗中，每有一个友方随从死亡，便拥有+1攻击力。", { scripts: ["ROTTING_GNOLL"] }),
+  m("BG28_300", "无害的骨颅", "UNDEAD", 1, 1, 1, "亡语：召唤两个1/1的骷髅。", { deathrattle: { summon: "skeleton", count: 2 } }),
+  m("BG25_008", "永恒骑士", "UNDEAD", 2, 4, 2, "在本局对战中，每有一个友方永恒骑士死亡，便拥有+4/+2（无论本随从在哪）。", { scripts: ["ETERNAL_KNIGHT"] }),
+  m("BG25_011", "死亡群居蛛魔", "UNDEAD", 2, 1, 4, "战吼：在本局对战中，你的亡灵拥有+1攻击力（无论它们在哪）。", { battlecry: "NERUBIAN_DEATHSWARM" }),
+  m("BG25_022", "血色骷髅", "UNDEAD", 2, 2, 1, "复生。亡语：使一个友方亡灵获得+1/+2。", { keywords: ["REBORN"], deathrattle: { buffRandomTribe: "UNDEAD", attack: 1, health: 2 } }),
+  m("BG25_010", "断手被遗忘者", "UNDEAD", 3, 2, 1, "亡语：召唤一只2/1并具有复生的手。", { deathrattle: { summon: "forgotten_hand", count: 1 } }),
+  m("BG28_309", "木乃伊工匠", "UNDEAD", 3, 5, 2, "亡语：使一个不同的友方亡灵获得复生。", { deathrattle: { grantRebornRandom: true } }),
+  m("BG30_125", "遗骸看管者", "UNDEAD", 3, 3, 3, "亡语：召唤三个1/1的骷髅。", { deathrattle: { summon: "skeleton", count: 3 } }),
+  m("BG33_323", "尘骨毁灭者", "UNDEAD", 3, 2, 6, "进击：在本局对战中，你的亡灵拥有+1攻击力（无论它们在哪）。", { rally: "UNDEAD_ATTACK" }),
+  m("BG_DEEP_015", "义肢假手", "UNDEAD", 3, 3, 1, "磁力。复生。可以磁力吸附在机械或亡灵上。", { keywords: ["MAGNETIC", "REBORN"], scripts: ["MAGNETIC"] }),
+  m("BG32_340", "噬渊施法者", "UNDEAD", 4, 4, 5, "战吼：消灭一个友方亡灵以发现一张亡灵牌。", { battlecry: "MAWCASTER", targeted: "OTHER_UNDEAD" }),
+  m("BG32_880", "友善的恶鬼", "UNDEAD", 4, 6, 3, "亡语：在本局对战中，你的酒馆法术使随从额外获得+1攻击力。", { deathrattle: { modifier: "spellAttack", amount: 1 } }),
+  m("BG34_690", "疫病行尸", "UNDEAD", 4, 4, 2, "亡语：在本局对战中，你的亡灵拥有+2攻击力。（如果在战斗之外触发，改为+4！）", { deathrattle: { modifier: "undeadAttack", amount: 2, recruitAmount: 4 } }),
+  m("BG36_511", "丧钟死灵", "UNDEAD", 4, 3, 6, "发动（1）：使一个不同的友方亡灵获得复生，然后消灭该亡灵以获得+4/+4。", { activate: "BELL_NECRO", activateCost: 1, targeted: "OTHER_UNDEAD" }),
+  m("BG32_324", "德鲁斯特堕落屠夫", "UNDEAD", 5, 2, 9, "复仇（4）：获取一张宰割。", { avenge: { count: 4, rewardSpell: "BG28_604" } }),
+  m("BG36_514", "障蔽女妖", "UNDEAD", 5, 7, 7, "在一个友方随从复生后，获得圣盾和+7/+7。", { scripts: ["BANSHEE_REBORN"] }),
+  m("BG25_009", "永恒召唤者", "UNDEAD", 6, 8, 1, "复生。亡语：召唤1个永恒骑士。", { keywords: ["REBORN"], deathrattle: { summon: "eternal_knight", count: 1 } }),
+  m("BG31_835", "致命打击者", "UNDEAD", 6, 8, 8, "复仇（4）：随机获取一张亡灵牌。亡语：从你的手牌中召唤它，其登场仅限本场战斗。", { avenge: { count: 4, storeRandomTribe: "UNDEAD" }, deathrattle: { summonStored: true } }),
+  m("BG34_692", "被遗忘者纺织工", "UNDEAD", 6, 3, 10, "在你施放一个酒馆法术后，你的亡灵在本局对战中拥有+2攻击力（无论它们在哪）。", { scripts: ["UNDEAD_SPELL_SCALER"] }),
+  m("BG36_515", "时尚魅影", "UNDEAD", 6, 6, 8, "在一个友方随从复生后，使你最右边的亡灵获得等同于复生随从攻击力的属性值。", { scripts: ["FASHION_PHANTOM"] }),
 ];
+
+export const DRAGONS = [
+  m("BG29_888", "微光护卫者", "DRAGON", 1, 1, 4, "进击：获得+2攻击力。", { rally: "SELF_ATTACK_2" }),
+  m("BG35_814", "血色幸存飞龙", "DRAGON", 1, 3, 3, "一旦本随从的攻击力达到6点，获得圣盾。", { scripts: ["SCARLET_SURVIVOR"] }),
+  m("BG21_015", "泰蕾苟萨", "DRAGON", 2, 4, 4, "本随从可永久保留战斗阶段获得的额外关键词和属性值。", { scripts: ["TARECGOSA"] }),
+  m("BG29_810", "千纸幼龙", "DRAGON", 2, 2, 3, "战斗开始时：使你最左边的龙获得+1/+2和风怒。", { combatStart: "PAPER_DRAKE" }),
+  m("BG26_963", "电音合成师", "DRAGON", 2, 3, 4, "战吼，战斗开始时：使你的其他龙获得+1/+1。", { battlecry: "SYNTHESIZER", combatStart: "SYNTHESIZER" }),
+  m("BG27_005", "时空船长钩尾", "DRAGON", 3, 1, 4, "每当你施放一个酒馆法术，使你的随从获得+1攻击力。", { tribes: ["DRAGON"], scripts: ["HOOKTAIL"] }),
+  m("BG29_816", "咆哮募兵龙", "DRAGON", 3, 2, 8, "每当另一条友方的龙攻击时，使其获得+3/+1。", { scripts: ["ROARING_RECRUITER"] }),
+  m("BG24_500", "琥珀卫士", "DRAGON", 3, 3, 2, "嘲讽。战斗开始时：使另一条友方的龙获得+2/+2和圣盾。", { keywords: ["TAUNT"], combatStart: "AMBER_GUARDIAN" }),
+  m("BG33_924", "蓝色雏龙", "DRAGON", 3, 1, 5, "进击：在本局对战中，你的酒馆法术使随从额外获得+1生命值。", { rally: "SPELL_HEALTH" }),
+  m("BG36_240", "受雇坐骑", "DRAGON", 3, 3, 5, "发动（2）：随机获取一张多彩幼龙。", { activate: "GET_CHROMATIC", activateCost: 2 }),
+  m("BG36_242", "青铜时光行者", "DRAGON", 4, 2, 9, "进击：随机获取一张多彩幼龙。", { rally: "GET_CHROMATIC" }),
+  m("BG36_243", "天诞逃生飞龙", "DRAGON", 4, 4, 7, "发动（1）：触发一个友方随从的进击效果。", { activate: "TRIGGER_RALLY", activateCost: 1, targeted: "RALLY" }),
+  m("BG29_813", "执念诗心龙", "DRAGON", 4, 2, 3, "圣盾。相邻的龙可永久保留战斗阶段获得的额外关键词和属性值。", { keywords: ["DIVINE_SHIELD"], scripts: ["POET"] }),
+  m("BG36_245", "符文奥术师", "DRAGON", 4, 2, 4, "战斗开始时：施放闪亮的戒指，触发两次。", { combatStart: "RING_TWICE" }),
+  m("BGS_041", "奥术守护者卡雷苟斯", "DRAGON", 5, 4, 12, "在你触发一个战吼后，使你的龙获得+2/+2。", { scripts: ["KALECGOS"] }),
+  m("BG32_820", "火鳞囤积者", "DRAGON", 5, 5, 5, "战吼，亡语：获取一张闪亮的戒指。", { tribes: ["DRAGON"], battlecry: "GET_RING", deathrattle: { rewardSpell: "BG28_168" } }),
+  m("BG32_821", "邪火咒龙", "DRAGON", 5, 6, 5, "在你的回合结束时，你的酒馆法术在本局对战中使随从额外获得+1/+1。", { tribes: ["DRAGON"], endTurn: "SPELL_BONUS" }),
+  m("BG34_633", "龙族看护员", "DRAGON", 5, 7, 4, "战吼，亡语：随机获取一张多彩幼龙。", { battlecry: "GET_CHROMATIC", deathrattle: { rewardChromatic: true } }),
+  m("BG24_004", "折跃之翼", "DRAGON", 6, 12, 4, "攻击时免疫。", { keywords: ["ATTACK_IMMUNE"] }),
+  m("BG32_822", "火铸唤魔师", "DRAGON", 6, 8, 5, "战斗开始时：使你的龙获得+2/+1。在你施放一个酒馆法术后永久提升此效果。", { combatStart: "FIRE_FORGED", scripts: ["FIRE_FORGED_SCALE"] }),
+  m("BG28_595", "生火专家", "DRAGON", 6, 8, 8, "在你的回合结束时，随机获取2张酒馆法术牌。", { endTurn: "GET_TWO_SPELLS" }),
+  m("BG36_241", "赤红守备巨龙", "DRAGON", 6, 8, 9, "圣盾。进击：施放威猛龙息。", { keywords: ["DIVINE_SHIELD"], rally: "MIGHTY_BREATH" }),
+];
+
+export const NEUTRALS = [
+  m("BG25_354", "提图斯·瑞文戴尔", "NEUTRAL", 5, 1, 7, "你的亡语额外触发一次。", { scripts: ["DOUBLE_DEATHRATTLES"] }),
+  m("BG26_ICC_901", "达卡莱附魔师", "NEUTRAL", 5, 1, 5, "你的回合结束效果会触发两次。", { scripts: ["DOUBLE_END_TURN"] }),
+  m("BG_LOE_077", "布莱恩·铜须", "NEUTRAL", 5, 2, 4, "你的战吼会触发两次。", { scripts: ["DOUBLE_BATTLECRIES"] }),
+];
+
+export const MINIONS = [...UNDEAD, ...DRAGONS, ...NEUTRALS];
 
 export const TOKENS = {
-  skeleton: { id: "BG25_006t", cardId: "BG25_006t", name: "骷髅", tribe: "UNDEAD", tier: 1, attack: 1, health: 1, imageUrl: art("BG25_006t"), token: true },
-  microbot: { id: "BOT_312t", cardId: "BOT_312t", name: "微型机器人", tribe: "MECH", tier: 1, attack: 1, health: 1, imageUrl: art("BOT_312t"), token: true },
-  forgotten_hand: { id: "BG25_010t", cardId: "BG25_010t", name: "被遗忘者之手", tribe: "UNDEAD", tier: 1, attack: 2, health: 1, imageUrl: art("BG25_010t"), keywords: ["REBORN"], token: true },
-  eternal_knight: { id: "BG25_008", cardId: "BG25_008", name: "永恒骑士", tribe: "UNDEAD", tier: 2, attack: 4, health: 2, imageUrl: art("BG25_008"), token: true },
+  skeleton: m("BG_ICC_026t", "骷髅", "UNDEAD", 1, 1, 1, "", { token: true }),
+  forgotten_hand: m("BG25_010t", "援手", "UNDEAD", 1, 2, 1, "复生", { token: true, keywords: ["REBORN"] }),
+  eternal_knight: m("BG25_008", "永恒骑士", "UNDEAD", 2, 4, 2, "", { token: true, scripts: ["ETERNAL_KNIGHT"] }),
 };
 
+export const CHROMATICS = [
+  m("BG34_634t", "蓝色多彩幼龙", "DRAGON", 3, 4, 4, "战吼：随机获取一张消耗2枚铸币的酒馆法术牌。", { token: true, battlecry: "GET_RANDOM_SPELL" }),
+  m("BG34_635t", "黑色多彩幼龙", "DRAGON", 3, 4, 6, "战吼：在本局对战中，你的酒馆法术使随从额外获得+1生命值。", { token: true, battlecry: "SPELL_HEALTH" }),
+  m("BG34_636t", "绿色多彩幼龙", "DRAGON", 3, 3, 5, "战吼：使你的其他龙获得+1/+3。", { token: true, battlecry: "GREEN_CHROMATIC" }),
+  m("BG34_637t", "青铜多彩幼龙", "DRAGON", 3, 5, 3, "战吼：使你的其他龙获得+3/+1。", { token: true, battlecry: "BRONZE_CHROMATIC" }),
+  m("BG34_638t", "红色多彩幼龙", "DRAGON", 3, 6, 4, "战吼：在本局对战中，你的酒馆法术使随从额外获得+1攻击力。", { token: true, battlecry: "SPELL_ATTACK" }),
+];
+
+export const SPELLS = [
+  s("BG28_168", "闪亮的戒指", 3, "使你的随从获得+1/+1。", "RING"),
+  s("BG28_604", "宰割", 5, "消灭一个友方亡灵。在本局对战中，你的亡灵拥有+5攻击力。", "SLAUGHTER", { targeted: "UNDEAD" }),
+  s("BG28_503", "强固", 1, "使一个随从获得+3生命值和嘲讽。", "FORTIFY", { targeted: "ANY_MINION" }),
+  s("BG28_810", "酒馆币", 1, "获得1枚铸币。", "COIN"),
+  s("BG28_897", "香蕉果盘", 1, "使一个随从获得+2/+2。", "BANANA", { targeted: "ANY_MINION" }),
+  s("BG28_827", "快速浏览", 2, "获得2次免费的刷新。", "FREE_REFRESH"),
+  s("BG36_246", "威猛龙息", 4, "使你的随从获得+2/+1。对你的龙重复一次。对具有圣盾的随从重复一次。", "MIGHTY_BREATH"),
+];
+
 export const BOT_PROFILES = [
-  { id: "mukla", name: "穆克拉", hero: "香蕉明猩", archetype: "BEAST", accent: "#ff9f66" },
-  { id: "millhouse", name: "米尔豪斯·法力风暴", hero: "法力风暴", archetype: "ELEMENTAL", accent: "#73d7ff" },
-  { id: "lichking", name: "巫妖王", hero: "复生仪式", archetype: "UNDEAD", accent: "#a8dadc" },
+  { id: "lichking", name: "巫妖王", hero: "复生仪式", archetype: "UNDEAD", accent: "#9bd6e5" },
   { id: "ysera", name: "伊瑟拉", hero: "梦境之门", archetype: "DRAGON", accent: "#8ddb73" },
-  { id: "daryl", name: "舞者达瑞尔", hero: "帽子戏法", archetype: "MIXED", accent: "#c3a6ff" },
-  { id: "patches", name: "海盗帕奇斯", hero: "海盗聚会！", archetype: "MIXED", accent: "#ef7b7b" },
+  { id: "sindragosa", name: "辛达苟萨", hero: "冰冷静滞", archetype: "DRAGON", accent: "#73d7ff" },
+  { id: "denathrius", name: "德纳修斯大帝", hero: "华丽盛宴", archetype: "UNDEAD", accent: "#ef7b7b" },
   { id: "toki", name: "永恒者托奇", hero: "时空酒馆", archetype: "MIXED", accent: "#ffd166" },
+  { id: "reno", name: "雷诺·杰克逊", hero: "要发财了！", archetype: "MIXED", accent: "#c3a6ff" },
+  { id: "illidan", name: "伊利丹·怒风", hero: "左膀右臂", archetype: "MIXED", accent: "#ff9f66" },
 ];
 
 export const UPGRADE_BASE_COST = { 1: 5, 2: 7, 3: 8, 4: 9, 5: 10 };

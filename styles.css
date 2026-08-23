@@ -1,210 +1,74 @@
 :root {
   color-scheme: dark;
   font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
-  --bg: #100d18;
-  --panel: rgba(32, 25, 45, 0.9);
-  --panel-2: #2d243c;
-  --line: rgba(255, 255, 255, 0.1);
-  --text: #f8f2e7;
-  --muted: #a79bb7;
-  --gold: #f4c76b;
-  --orange: #e98d5b;
-  --red: #ee6a6a;
-  --blue: #79c9e8;
+  --bg: #0e0b13; --panel: rgba(33, 25, 43, .94); --panel2: #2e2439;
+  --line: rgba(255,255,255,.11); --text: #f8f1e7; --muted: #a79bb5;
+  --gold: #f2c66d; --orange: #e9905b; --red: #e86b70; --blue: #74c8e8;
 }
-
 * { box-sizing: border-box; }
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
-  color: var(--text);
-  background:
-    radial-gradient(circle at 50% -10%, rgba(142, 80, 180, .28), transparent 34%),
-    radial-gradient(circle at 90% 30%, rgba(209, 100, 64, .12), transparent 28%),
-    linear-gradient(160deg, #161020, #0d0b13 70%);
+html, body, #app { min-width: 320px; min-height: 100%; margin: 0; }
+body { color: var(--text); background: radial-gradient(circle at 50% -20%, #392248, transparent 42%), linear-gradient(145deg, #15101d, #0b090e 72%); }
+button { border: 1px solid var(--line); border-radius: 10px; color: inherit; background: rgba(255,255,255,.065); font: inherit; cursor: pointer; }
+button:hover:not(:disabled) { border-color: rgba(242,198,109,.65); background: rgba(242,198,109,.13); }
+button:disabled { opacity: .36; cursor: not-allowed; }
+.eyebrow, small { color: var(--muted); }
+.brand-mark { color: var(--gold); font-size: 46px; filter: drop-shadow(0 0 20px rgba(242,198,109,.4)); }
+
+.start-screen { min-height: 100vh; display: grid; grid-template-columns: minmax(280px,.8fr) minmax(600px,1.6fr); align-items: center; gap: 42px; padding: 44px max(34px,6vw); }
+.start-copy h1 { max-width: 560px; margin: 8px 0 14px; font: 700 clamp(42px,6vw,76px)/1.05 Georgia,"Songti SC",serif; }
+.start-copy > p { color: var(--muted); line-height: 1.8; }
+.resume-button { margin-top: 22px; padding: 12px 24px; color: #25191e; border: 0; background: linear-gradient(135deg,var(--gold),var(--orange)); font-weight: 800; }
+.hero-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+.hero-choice { min-height: 310px; padding: 0 18px 20px; overflow: hidden; text-align: left; background: linear-gradient(155deg,#3b2d49,#1b1523); }
+.hero-choice img { width: calc(100% + 36px); height: 180px; margin: 0 -18px 18px; object-fit: cover; object-position: center 28%; }
+.hero-choice div { display: flex; flex-direction: column; gap: 7px; }.hero-choice strong { font: 700 22px Georgia,"Songti SC",serif; }.hero-choice p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.legal-note { position: fixed; right: 20px; bottom: 10px; color: #665d70; font-size: 10px; }
+
+.game-shell, .battle-screen { min-height: 100vh; }
+.topbar { position: sticky; z-index: 20; top: 0; height: 62px; display: grid; grid-template-columns: 90px 1fr auto auto; align-items: center; gap: 16px; padding: 7px 16px; border-bottom: 1px solid var(--line); background: rgba(13,10,17,.92); backdrop-filter: blur(16px); }
+.round { display: flex; align-items: baseline; gap: 5px; }.round span { color: var(--muted); font-size: 10px; }.round b { font-size: 26px; }.round i { color: var(--muted); font-size: 10px; font-style: normal; }
+.hero { display: flex; align-items: center; gap: 9px; }.hero img { width: 42px; height: 42px; border: 2px solid var(--gold); border-radius: 50%; object-fit: cover; }.hero div { display: flex; flex-direction: column; }.hero small { font-size: 9px; }
+.resources { display: flex; gap: 7px; }.resources span { min-width: 62px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 9px; text-align: center; font-weight: 800; }.resources .hp { color: #ff9396; }.resources .coin { color: var(--gold); }
+.quiet-button { padding: 7px 10px; color: var(--muted); font-size: 10px; }
+
+.landscape-layout { display: grid; grid-template-columns: 174px minmax(650px,1fr) 220px; gap: 10px; padding: 10px 10px 82px; }
+.standings, .detail-panel, .zone, .opponent-bar { border: 1px solid var(--line); border-radius: 15px; background: var(--panel); box-shadow: 0 10px 30px rgba(0,0,0,.16); }
+.standings { align-self: start; padding: 10px; }.side-title { margin: 2px 4px 8px; color: var(--gold); font-size: 11px; }
+.standing { display: grid; grid-template-columns: 14px 6px 1fr auto; align-items: center; gap: 6px; padding: 7px 3px; border-top: 1px solid rgba(255,255,255,.05); }.standing.you { margin-inline: -4px; padding-inline: 7px; border-radius: 8px; background: rgba(242,198,109,.1); }.standing.dead { opacity: .3; filter: grayscale(1); }.standing > b,.standing > span { font-size: 9px; }.standing i { width: 6px; height: 6px; border-radius: 50%; background: var(--c); }.standing div { min-width: 0; display: flex; flex-direction: column; }.standing strong { overflow: hidden; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }.standing small { overflow: hidden; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+.recruit-stage { min-width: 0; display: flex; flex-direction: column; gap: 9px; }
+.opponent-bar { min-height: 67px; display: flex; align-items: center; justify-content: space-between; padding: 9px 13px; }.opponent-bar > div:first-child { display: flex; flex-direction: column; }.opponent-bar b { font-size: 16px; }.opponent-bar span { color: var(--muted); font-size: 9px; }
+.enemy-mini { display: flex; gap: 4px; overflow-x: auto; }.enemy-mini span { position: relative; flex: 0 0 38px; height: 45px; overflow: hidden; border-radius: 8px; background: #211a2a; }.enemy-mini img { width: 100%; height: 100%; object-fit: cover; }.enemy-mini i { position: absolute; right: 2px; bottom: 2px; padding: 1px 3px; border-radius: 5px; color: var(--gold); background: rgba(0,0,0,.74); font-size: 7px; font-style: normal; }
+.zone { padding: 10px; overflow: hidden; }.zone > header { display: flex; align-items: center; justify-content: space-between; min-height: 33px; margin-bottom: 7px; }.zone header > div:first-child { display: flex; align-items: baseline; gap: 7px; }.zone h2 { margin: 0; font-size: 15px; }.zone small { font-size: 8px; letter-spacing: .09em; }.zone header > span { color: var(--muted); font-size: 8px; }
+.shop-actions { display: flex; gap: 5px; }.shop-actions button { padding: 5px 8px; font-size: 9px; }.shop-actions button.active { color: #241925; background: var(--gold); }
+.card-strip { display: flex; gap: 7px; min-width: 0; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; scrollbar-color: #5f4d6e transparent; scroll-snap-type: x proximity; touch-action: pan-x; }
+.game-card { position: relative; flex: 0 0 126px; min-height: 178px; display: flex; flex-direction: column; overflow: hidden; padding: 6px; border: 1px solid rgba(255,255,255,.14); border-radius: 13px; background: linear-gradient(150deg,#4c4d5d,#242630 60%); box-shadow: 0 6px 16px rgba(0,0,0,.22); scroll-snap-align: start; transition: transform .15s,border-color .15s; }
+.game-card[data-tribe="DRAGON"] { background: linear-gradient(150deg,#68465f,#30212c 60%); }.game-card[data-tribe="NEUTRAL"] { background: linear-gradient(150deg,#51455d,#28222e 60%); }.game-card.spell-card { background: linear-gradient(150deg,#315b67,#1b3137 60%); }.game-card.golden { border-color: #ffd166; box-shadow: inset 0 0 20px rgba(255,209,102,.16); }.game-card.valid-target { border-color: #62e6a7; box-shadow: 0 0 0 3px rgba(98,230,167,.2),0 0 25px rgba(98,230,167,.18); animation: pulse 1.2s infinite; }.game-card.selected { border-color: var(--gold); transform: translateY(-3px); }.game-card.dragging { opacity: .45; }
+@keyframes pulse { 50% { box-shadow: 0 0 0 5px rgba(98,230,167,.12),0 0 30px rgba(98,230,167,.25); } }
+.tier-gem { position: absolute; z-index: 3; top: 5px; left: 5px; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; color: #261b2d; background: var(--gold); font-size: 9px; font-weight: 900; }
+.art-button { position: relative; height: 60px; margin: -6px -6px 5px; overflow: hidden; padding: 0; border: 0; border-radius: 0; background: transparent; }.art-button img { width: 100%; height: 100%; object-fit: cover; object-position: center 32%; }.art-button span { position: absolute; right: 0; bottom: 0; left: 0; padding: 3px 2px; overflow: hidden; background: linear-gradient(transparent,rgba(0,0,0,.9)); font: 700 10px Georgia,"Songti SC",serif; text-overflow: ellipsis; white-space: nowrap; }
+.card-meta { overflow: hidden; color: var(--muted); font-size: 7px; text-align: center; text-overflow: ellipsis; white-space: nowrap; }.game-card > p { min-height: 34px; margin: 4px 0 0; overflow: hidden; color: #e1d7e8; font-size: 7.5px; line-height: 1.4; text-align: center; }.card-stats { position: absolute; right: 6px; bottom: 34px; left: 6px; display: flex; justify-content: space-between; pointer-events: none; }.card-stats b { display: grid; place-items: center; min-width: 25px; height: 25px; padding: 0 4px; border-radius: 50%; background: #d49b3f; font-size: 10px; }.card-stats b:last-child { background: #b84d54; }.card-controls { margin-top: auto; padding-top: 20px; }.card-controls > button { width: 100%; padding: 5px; font-size: 8px; }.card-actions { display: flex; gap: 3px; }.card-actions button { flex: 1; padding: 5px 2px; font-size: 7px; }
+.empty { min-width: 100%; min-height: 120px; display: grid; place-items: center; color: #756b7e; border: 1px dashed var(--line); border-radius: 12px; font-size: 10px; }.board-zone .empty { min-height: 92px; }.empty.compact { min-height: 62px; }
+.board-zone .game-card { cursor: grab; touch-action: none; }.board-zone .game-card:active { cursor: grabbing; }
+.hand-dock { display: grid; grid-template-columns: 42px minmax(0,1fr); gap: 7px; min-height: 76px; padding: 0 3px; }.hand-dock label { align-self: center; color: var(--muted); font-size: 9px; text-align: center; }.hand-dock label b { display: block; margin-top: 4px; color: var(--text); }.hand-strip .game-card { flex-basis: 102px; min-height: 136px; }.hand-strip .art-button { height: 45px; }.hand-strip .game-card > p { min-height: 21px; font-size: 6.5px; }.hand-strip .card-stats { bottom: 31px; }.hand-strip .card-controls { padding-top: 16px; }
+.detail-panel { align-self: start; overflow: hidden; }.detail-card { padding-bottom: 13px; text-align: center; }.detail-card img { width: 100%; height: 125px; object-fit: cover; object-position: center 30%; }.detail-card small { display: block; margin-top: 9px; font-size: 8px; }.detail-card h3 { margin: 5px 10px; font: 700 17px Georgia,"Songti SC",serif; }.detail-card p { margin: 6px 13px; color: var(--muted); font-size: 9px; line-height: 1.55; }.detail-card > strong { display: inline-block; margin-top: 5px; color: var(--gold); font-size: 16px; }.detail-empty { min-height: 180px; display: grid; place-items: center; color: var(--muted); font-size: 10px; }.message-log { padding: 11px; border-top: 1px solid var(--line); }.message-log b { color: var(--gold); font-size: 9px; }.message-log p { margin: 6px 0; color: var(--muted); font-size: 8px; line-height: 1.4; }
+.action-bar { position: fixed; z-index: 18; right: 10px; bottom: 9px; left: 194px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 9px 8px 14px; border: 1px solid var(--line); border-radius: 15px; background: rgba(24,18,31,.94); box-shadow: 0 12px 35px rgba(0,0,0,.4); backdrop-filter: blur(12px); }.action-bar > span { overflow: hidden; color: var(--muted); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }.combat-button { min-width: 145px; padding: 10px 17px; color: #251a20; border: 0; background: linear-gradient(135deg,var(--gold),var(--orange)); font-weight: 900; }
+.target-banner { position: fixed; z-index: 30; top: 68px; left: 50%; padding: 8px 12px; transform: translateX(-50%); border: 1px solid #62e6a7; border-radius: 12px; color: #c9ffe7; background: rgba(13,39,30,.96); box-shadow: 0 10px 30px rgba(0,0,0,.35); font-size: 10px; }.target-banner button { margin-left: 7px; padding: 4px 7px; font-size: 8px; }
+.overlay { position: fixed; z-index: 50; inset: 0; display: grid; place-items: center; padding: 20px; background: rgba(7,5,9,.86); backdrop-filter: blur(8px); }.discover { width: min(720px,95vw); padding: 24px; border: 1px solid rgba(242,198,109,.3); border-radius: 20px; background: linear-gradient(150deg,#352941,#17121d); text-align: center; }.discover h2 { margin: 5px 0 18px; }.discover > div { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }.discover button { min-height: 210px; display: flex; flex-direction: column; align-items: center; padding: 0 12px 12px; overflow: hidden; }.discover img { width: calc(100% + 24px); height: 90px; object-fit: cover; }.discover b { margin-top: 9px; }.discover span,.discover p { color: var(--muted); font-size: 9px; }.discover p { line-height: 1.45; }
+
+.battle-screen { overflow: hidden; background: radial-gradient(circle at 50% 50%,rgba(112,64,135,.3),transparent 45%),linear-gradient(#130f19,#09070c); }.battle-stage { height: calc(100vh - 62px); min-height: 420px; display: grid; grid-template-rows: 58px 1fr 28px 1fr 58px; gap: 4px; padding: 9px 24px; }.battle-stage > header { display: flex; align-items: center; justify-content: space-between; }.battle-stage h1 { margin: 0; font: 700 24px Georgia,"Songti SC",serif; }.battle-stage header small { font-size: 8px; }.playback { display: flex; align-items: center; gap: 6px; }.playback button { padding: 5px 9px; font-size: 9px; }.playback span { min-width: 42px; color: var(--muted); font-size: 9px; text-align: center; }
+.combat-board { position: relative; min-height: 0; display: flex; align-items: center; justify-content: center; gap: clamp(6px,1vw,14px); padding: 13px 55px 7px; border: 1px solid var(--line); border-radius: 19px; background: linear-gradient(90deg,rgba(38,28,47,.75),rgba(58,40,68,.9),rgba(38,28,47,.75)); }.combat-board > label { position: absolute; top: 7px; left: 12px; color: var(--muted); font-size: 8px; }.combat-card { position: relative; width: clamp(78px,9vw,118px); height: min(19vh,145px); display: flex; flex-direction: column; align-items: center; overflow: hidden; border: 2px solid rgba(255,255,255,.15); border-radius: 50% 50% 14px 14px; background: #2d2438; box-shadow: 0 9px 20px rgba(0,0,0,.32); }.combat-card.golden { border-color: var(--gold); }.combat-card.shield { box-shadow: 0 0 0 4px rgba(108,211,255,.28),0 0 26px rgba(108,211,255,.55); }.combat-card img { width: 100%; height: 67%; object-fit: cover; object-position: center 30%; }.combat-card > b { width: 100%; padding: 4px; overflow: hidden; font-size: 8px; text-align: center; text-overflow: ellipsis; white-space: nowrap; }.combat-card > div { position: absolute; right: 5px; bottom: 4px; left: 5px; display: flex; justify-content: space-between; }.combat-card span { display: grid; place-items: center; min-width: 23px; height: 23px; border-radius: 50%; background: #d49b3f; font-size: 9px; font-weight: 900; }.combat-card span:last-child { background: #b84d54; }
+.versus-line { display: flex; align-items: center; gap: 12px; color: var(--gold); }.versus-line span { flex: 1; height: 1px; background: linear-gradient(90deg,transparent,var(--line),transparent); }.battle-stage > footer { display: flex; align-items: center; justify-content: space-between; }.battle-stage footer p { color: var(--muted); font-size: 10px; }.battle-stage footer button { padding: 9px 18px; color: #251a20; border: 0; background: linear-gradient(135deg,var(--gold),var(--orange)); font-weight: 800; }.defeated { color: var(--red); font-size: 13px; }
+.game-over { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }.game-over h1 { margin: 6px; font: 700 62px Georgia,"Songti SC",serif; }.game-over > p { color: var(--muted); }.result-stats { display: grid; grid-template-columns: repeat(4,100px); gap: 9px; margin: 20px; }.result-stats span { padding: 14px; border: 1px solid var(--line); border-radius: 12px; color: var(--muted); font-size: 9px; }.result-stats b { display: block; margin-bottom: 4px; color: var(--gold); font-size: 23px; }.game-over > button { padding: 11px 25px; }
+.rotate-hint { display: none; }
+
+@media (max-width: 1000px) {
+  .landscape-layout { grid-template-columns: 148px minmax(560px,1fr); }.detail-panel { display: none; }.action-bar { left: 168px; }
+  .game-card { flex-basis: 114px; }.start-screen { grid-template-columns: 1fr; }.start-copy { text-align: center; }.start-copy h1 { margin-inline: auto; }.hero-grid { max-width: 820px; margin: auto; }
 }
-button { font: inherit; color: inherit; cursor: pointer; }
-button:disabled { cursor: not-allowed; opacity: .38; }
-
-.start-screen, .game-over {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 20px;
-  text-align: center;
-}
-.brand-mark { color: var(--gold); font-size: 50px; filter: drop-shadow(0 0 22px rgba(244, 199, 107, .45)); }
-.eyebrow { margin: 0 0 8px; color: var(--gold); font-size: 11px; letter-spacing: .2em; text-transform: uppercase; }
-h1 { margin: 0; font-family: Georgia, "Songti SC", serif; font-size: clamp(42px, 8vw, 78px); letter-spacing: .08em; }
-.lead { max-width: 620px; margin: 14px auto 34px; color: var(--muted); line-height: 1.8; }
-.hero-grid { width: min(960px, 100%); display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-.hero-choice {
-  min-height: 320px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 26px 22px;
-  border: 1px solid var(--line);
-  border-radius: 24px;
-  background: linear-gradient(145deg, rgba(60, 45, 78, .9), rgba(25, 20, 35, .95));
-  box-shadow: 0 20px 60px rgba(0,0,0,.25);
-  transition: .2s ease;
-}
-.hero-choice:hover { transform: translateY(-5px); border-color: rgba(244,199,107,.6); box-shadow: 0 24px 70px rgba(0,0,0,.4); }
-.hero-icon { display: grid; place-items: center; width: 118px; height: 118px; margin-bottom: 22px; overflow: hidden; border-radius: 50%; color: #20172b; font-size: 42px; background: radial-gradient(circle at 35% 30%, #fff0b8, #d49448); box-shadow: 0 0 0 7px rgba(244,199,107,.1), 0 14px 30px rgba(0,0,0,.35); }
-.hero-icon img { width: 100%; height: 100%; object-fit: cover; object-position: center 22%; transform: scale(1.2); }
-.hero-tag { padding: 4px 10px; color: var(--gold); border: 1px solid rgba(244,199,107,.25); border-radius: 999px; font-size: 11px; }
-.hero-choice strong { margin-top: 14px; font-family: Georgia, "Songti SC", serif; font-size: 25px; }
-.hero-choice small { min-height: 50px; margin-top: 12px; color: var(--muted); line-height: 1.7; }
-.choose-label { margin-top: auto; color: var(--gold); font-size: 13px; }
-.legal-note { margin-top: 24px; color: #756c81; font-size: 12px; }
-
-.game-shell { min-height: 100vh; }
-.topbar {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  min-height: 74px;
-  display: grid;
-  grid-template-columns: 100px 1fr auto;
-  align-items: center;
-  gap: 18px;
-  padding: 10px 24px;
-  background: rgba(15, 11, 21, .88);
-  border-bottom: 1px solid var(--line);
-  backdrop-filter: blur(18px);
-}
-.round-block { display: flex; align-items: baseline; gap: 10px; }
-.round-block span { color: var(--muted); font-size: 11px; }
-.round-block strong { font-size: 28px; }
-.round-block i { color: var(--muted); font-size: 12px; font-style: normal; }
-.hero-summary { display: flex; align-items: center; gap: 11px; }
-.hero-summary .avatar { display: grid; place-items: center; width: 42px; height: 42px; overflow: hidden; color: #2b2035; border-radius: 50%; background: var(--gold); }
-.hero-summary .avatar img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.2); }
-.hero-summary div { display: flex; flex-direction: column; }
-.hero-summary small { max-width: 520px; color: var(--muted); font-size: 11px; }
-.resources { display: flex; gap: 8px; }
-.resource { padding: 8px 11px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255,255,255,.04); font-weight: 700; }
-.resource.health { color: #ff8c8c; }.resource.gold { color: var(--gold); }.resource.rank { color: var(--blue); }
-
-.main-grid { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 16px; padding: 16px; }
-.panel { border: 1px solid var(--line); border-radius: 18px; background: var(--panel); box-shadow: 0 16px 40px rgba(0,0,0,.16); }
-.leaderboard { position: sticky; top: 90px; height: fit-content; padding: 15px; }
-.panel-title { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 13px; }
-.panel-title small { color: var(--muted); }
-.rank-row { display: grid; grid-template-columns: 20px 8px 1fr auto; align-items: center; gap: 8px; padding: 9px 6px; border-top: 1px solid rgba(255,255,255,.055); }
-.rank-row.you { margin-inline: -6px; padding-inline: 12px; border-radius: 10px; background: rgba(244,199,107,.1); }
-.rank-row.dead { opacity: .35; filter: grayscale(1); }
-.rank-number { color: var(--muted); font-size: 11px; }
-.rank-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
-.rank-row div { display: flex; min-width: 0; flex-direction: column; }
-.rank-row strong { overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
-.rank-row small { color: var(--muted); font-size: 9px; }
-.rank-health { color: #ef9999; font-size: 10px; }
-
-.play-area { min-width: 0; display: flex; flex-direction: column; gap: 12px; padding-bottom: 92px; }
-.opponent-strip { display: flex; justify-content: space-between; align-items: center; padding: 13px 18px; }
-.opponent-strip > div:first-child { display: flex; flex-direction: column; }
-.opponent-strip strong { font-size: 18px; }.opponent-strip small { color: var(--muted); font-size: 10px; }
-.opponent-preview { display: flex; gap: 5px; }
-.opponent-preview span { display: flex; flex-direction: column; align-items: center; min-width: 42px; padding: 6px; border-radius: 9px; background: rgba(255,255,255,.06); color: var(--muted); }
-.opponent-preview i { margin-top: 3px; font-size: 9px; font-style: normal; }
-.shop-section, .board-section { padding: 14px; overflow: hidden; }
-.section-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-.section-heading > div:first-child { display: flex; align-items: baseline; gap: 10px; }
-.section-heading .eyebrow { margin: 0; }.section-heading h2 { margin: 0; font-size: 17px; }
-.section-heading.compact .hint { color: var(--muted); font-size: 10px; }
-.shop-controls { display: flex; gap: 7px; }
-.shop-controls button, .minion-card button { border: 1px solid var(--line); border-radius: 9px; background: rgba(255,255,255,.07); }
-.shop-controls button { padding: 7px 10px; font-size: 11px; }
-.shop-controls button:hover:not(:disabled), .shop-controls button.active { color: #261c30; border-color: var(--gold); background: var(--gold); }
-.card-row { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: thin; scrollbar-color: #594a67 transparent; }
-.minion-card {
-  position: relative;
-  flex: 0 0 142px;
-  min-height: 228px;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  padding: 8px;
-  border: 1px solid rgba(255,255,255,.13);
-  border-radius: 15px;
-  background: linear-gradient(155deg, #493d59, #231c2e 56%);
-  box-shadow: 0 8px 20px rgba(0,0,0,.22);
-  overflow: hidden;
-}
-.minion-card[data-tribe="MECH"] { background: linear-gradient(155deg, #3f5968, #202b35 58%); }
-.minion-card[data-tribe="BEAST"] { background: linear-gradient(155deg, #664536, #30231e 58%); }
-.minion-card[data-tribe="UNDEAD"] { background: linear-gradient(155deg, #4d5364, #252832 58%); }
-.minion-card[data-tribe="DRAGON"] { background: linear-gradient(155deg, #68455f, #30202b 58%); }
-.minion-card[data-tribe="ELEMENTAL"] { background: linear-gradient(155deg, #6b4d35, #2f251e 58%); }
-.minion-card[data-tribe="NAGA"] { background: linear-gradient(155deg, #355e68, #1d3034 58%); }
-.minion-card.golden { border-color: #ffd166; background: linear-gradient(145deg, #806229, #3e2d19 60%); box-shadow: inset 0 0 20px rgba(255,209,102,.18), 0 8px 20px rgba(0,0,0,.3); }
-.tier-badge { position: absolute; z-index: 2; top: 7px; left: 7px; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; color: #24192c; background: var(--gold); font-weight: 900; font-size: 11px; }
-.card-art { position: relative; display: grid; place-items: center; height: 78px; margin: -8px -8px 7px; overflow: hidden; background: radial-gradient(circle at 50% 80%, rgba(255,255,255,.2), transparent 55%); font-size: 31px; }
-.card-art img { width: 100%; height: 100%; object-fit: cover; object-position: center 35%; }
-.card-art span { position: absolute; right: 5px; bottom: 3px; display: grid; place-items: center; width: 21px; height: 21px; border-radius: 50%; color: #f7e7bd; background: rgba(18,13,23,.75); font-size: 11px; }
-.card-name { overflow: hidden; font-family: Georgia, "Songti SC", serif; font-size: 13px; font-weight: 700; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
-.tribe-label { margin-top: 3px; color: var(--muted); font-size: 9px; text-align: center; }
-.card-text { min-height: 52px; margin-top: 7px; color: #ded3e8; font-size: 9px; line-height: 1.5; text-align: center; }
-.keyword { color: var(--gold); margin-right: 3px; font-weight: 700; }
-.stats { position: absolute; inset: auto 8px 42px; display: flex; justify-content: space-between; pointer-events: none; }
-.stats span { display: grid; place-items: center; min-width: 27px; height: 27px; padding: 0 5px; border-radius: 50%; font-size: 12px; font-weight: 900; box-shadow: 0 3px 9px rgba(0,0,0,.35); }
-.stats .attack { background: #d9a64c; }.stats .health { background: #b84f54; }
-.primary-action { margin-top: auto; padding-top: 22px; }
-.primary-action > button { width: 100%; padding: 7px; font-size: 10px; }
-.primary-action > button:hover:not(:disabled) { color: #271c2e; background: var(--gold); }
-.card-actions { display: grid; grid-template-columns: 25px 1fr 25px; gap: 3px; }
-.card-actions .sell-button { grid-column: 1 / -1; }
-.card-actions button { padding: 5px 3px; font-size: 9px; }
-.card-actions .icon-button { font-size: 16px; }.card-actions .gold-button { color: var(--gold); }
-.empty-state, .empty-hand { width: 100%; min-height: 160px; display: grid; place-items: center; color: #756c81; border: 1px dashed var(--line); border-radius: 14px; font-size: 12px; }
-.board-empty { min-height: 228px; }
-.hand-section { display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: center; gap: 8px; padding: 0 6px; }
-.hand-label { color: var(--muted); font-size: 11px; text-align: center; }.hand-label span { display: block; margin-top: 4px; color: var(--text); }
-.hand-row .minion-card { flex-basis: 116px; min-height: 192px; }
-.hand-row .card-art { height: 58px; }.hand-row .card-text { min-height: 36px; font-size: 8px; }.hand-row .stats { bottom: 39px; }
-.empty-hand { min-height: 100px; }
-.action-dock { position: fixed; z-index: 9; right: 16px; bottom: 14px; left: 252px; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 10px 12px 10px 18px; border: 1px solid var(--line); border-radius: 18px; background: rgba(24,18,32,.92); box-shadow: 0 16px 50px rgba(0,0,0,.4); backdrop-filter: blur(16px); }
-.message { overflow: hidden; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
-.combat-button, .continue-button, .restart-button { border: 0; border-radius: 12px; color: #2a1b20; background: linear-gradient(135deg, #f6d27d, #e98d5b); font-weight: 800; box-shadow: 0 8px 20px rgba(233,141,91,.25); }
-.combat-button { padding: 12px 20px; }.combat-button span { margin-left: 12px; }
-
-.modal-backdrop { position: fixed; z-index: 30; inset: 0; display: grid; place-items: center; padding: 20px; background: rgba(8,6,11,.82); backdrop-filter: blur(8px); }
-.modal { width: min(760px, 100%); max-height: 92vh; overflow-y: auto; padding: 28px; border: 1px solid rgba(244,199,107,.2); border-radius: 24px; background: linear-gradient(150deg, #332840, #17121f); box-shadow: 0 30px 90px rgba(0,0,0,.6); text-align: center; }
-.modal h2 { margin: 0 0 8px; font-family: Georgia, "Songti SC", serif; font-size: 28px; }
-.discover-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 22px; }
-.discover-choice { min-height: 220px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px; border: 1px solid var(--line); border-radius: 16px; background: rgba(255,255,255,.04); }
-.discover-choice:hover { border-color: var(--gold); transform: translateY(-3px); }.discover-choice > img { width: 110px; height: 74px; border-radius: 10px; object-fit: cover; object-position: center 35%; }.discover-choice strong { margin-top: 12px; font-size: 17px; }.discover-choice small, .discover-choice p { color: var(--muted); font-size: 11px; line-height: 1.6; }
-.battle-modal { width: min(880px, 100%); }
-.battle-summary { color: var(--muted); }
-.battlefield { display: grid; grid-template-columns: 1fr 44px 1fr; align-items: center; gap: 12px; margin: 22px 0; }
-.battlefield h3 { color: var(--muted); font-size: 11px; font-weight: 500; }.versus { color: var(--gold); font-family: Georgia, serif; font-weight: 900; }
-.battle-line { min-height: 125px; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 5px; padding: 12px; border: 1px solid var(--line); border-radius: 14px; background: rgba(0,0,0,.14); }
-.battle-card { width: 74px; min-height: 104px; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; padding: 0 7px 7px; border: 1px solid var(--line); border-radius: 11px; background: #332941; }.battle-card.golden { border-color: var(--gold); }.battle-card img { width: calc(100% + 14px); height: 53px; object-fit: cover; object-position: center 35%; }.battle-card strong { margin-top: 5px; font-size: 9px; }.battle-card i { margin-top: 4px; color: var(--gold); font-size: 10px; font-style: normal; }
-.defeated { color: var(--red); }
-details { color: var(--muted); font-size: 11px; text-align: left; }.combat-log { max-height: 120px; overflow-y: auto; line-height: 1.8; }
-.continue-button { margin-top: 20px; padding: 12px 28px; }
-.result-rank { display: flex; align-items: baseline; gap: 6px; color: var(--muted); font-size: 18px; }.result-rank strong { color: var(--gold); font-family: Georgia, serif; font-size: 80px; }
-.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; width: min(560px, 100%); margin: 20px 0 28px; }.stats-grid div { padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255,255,255,.035); }.stats-grid strong { display: block; color: var(--gold); font-size: 24px; }.stats-grid span { color: var(--muted); font-size: 10px; }
-.restart-button { padding: 13px 34px; }
-
-@media (max-width: 860px) {
-  .hero-grid { grid-template-columns: 1fr; max-width: 460px; }.hero-choice { min-height: 260px; }
-  .topbar { grid-template-columns: 70px 1fr; padding-inline: 12px; }.hero-summary small { display: none; }.resources { grid-column: 1 / -1; justify-content: stretch; }.resource { flex: 1; text-align: center; }
-  .main-grid { grid-template-columns: 1fr; padding: 9px; }.leaderboard { position: static; display: flex; gap: 6px; overflow-x: auto; padding: 8px; }.panel-title { display: none; }.rank-row { min-width: 104px; grid-template-columns: 15px 5px 1fr; border: 0; }.rank-health { grid-column: 3; }
-  .opponent-strip { align-items: flex-start; gap: 10px; }.opponent-preview { max-width: 55%; overflow-x: auto; }.opponent-preview span { min-width: 37px; }
-  .section-heading { align-items: flex-start; gap: 8px; }.section-heading > div:first-child { flex-direction: column; gap: 2px; }.shop-controls { flex-wrap: wrap; justify-content: flex-end; }
-  .minion-card { flex-basis: 128px; }.action-dock { right: 9px; bottom: 9px; left: 9px; }
-  .battlefield { grid-template-columns: 1fr; }.versus { padding: 0; }.battle-line { min-height: 96px; }
-}
-
-@media (max-width: 520px) {
-  .start-screen { justify-content: flex-start; }.hero-choice { min-height: 220px; }.hero-icon { width: 70px; height: 70px; margin-bottom: 14px; }
-  .opponent-strip { flex-direction: column; }.opponent-preview { max-width: 100%; }.section-heading.compact .hint { display: none; }
-  .discover-grid { grid-template-columns: 1fr; }.discover-choice { min-height: 150px; }.modal { padding: 20px 14px; }
-  .stats-grid { grid-template-columns: repeat(2, 1fr); }.message { display: none; }.combat-button { width: 100%; }
+@media (orientation: portrait) and (max-width: 720px) {
+  .rotate-hint { position: fixed; z-index: 90; right: 12px; bottom: 12px; left: 12px; display: block; padding: 9px; border: 1px solid var(--gold); border-radius: 10px; color: #281c20; background: var(--gold); font-size: 10px; text-align: center; }
+  .start-screen { grid-template-columns: 1fr; padding: 28px 16px 60px; }.hero-grid { grid-template-columns: 1fr; }.hero-choice { min-height: 140px; display: grid; grid-template-columns: 130px 1fr; padding: 0; }.hero-choice img { width: 130px; height: 100%; margin: 0; }.hero-choice div { padding: 14px; }
+  .topbar { height: auto; grid-template-columns: 55px 1fr auto; }.topbar .quiet-button { display: none; }.resources span { min-width: 47px; padding: 6px; font-size: 10px; }
+  .landscape-layout { grid-template-columns: 1fr; padding: 7px 7px 78px; }.standings { display: flex; gap: 5px; overflow-x: auto; }.side-title { display: none; }.standing { flex: 0 0 96px; grid-template-columns: 11px 4px 1fr; }.standing > span { grid-column: 3; }.action-bar { left: 7px; }.opponent-bar { align-items: flex-start; }.enemy-mini { max-width: 50%; }.game-card { flex-basis: 112px; }
+  .battle-stage { height: calc(100vh - 95px); padding: 6px; }.combat-board { justify-content: flex-start; overflow-x: auto; padding-inline: 35px 8px; }.combat-card { flex: 0 0 78px; }.battle-stage h1 { font-size: 16px; }
 }
