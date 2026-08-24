@@ -29,6 +29,8 @@ export function createMinion(definition, golden = false, modifiers = baseModifie
     minion.maxHealth += (modifiers.eternalDeaths || 0) * 2;
   }
   checkThresholds(minion);
+  minion.rebornAttack = minion.attack;
+  minion.rebornKeywords = [...minion.keywords];
   return minion;
 }
 
@@ -45,10 +47,12 @@ function addCardToHand(game, definition, golden = false) {
 export function createGame(heroId, rng = Math.random) {
   const hero = HEROES.find((item) => item.id === heroId) || HEROES[0];
   const bots = BOT_PROFILES.map((profile) => ({
-    ...clone(profile), health: 30, alive: true, tier: 1, board: [], hand: [], gold: 3, modifiers: baseModifiers(),
+    ...clone(profile), health: 30, alive: true, tier: 1, board: [], hand: [], shop: [], gold: 3,
+    upgradeCost: UPGRADE_BASE_COST[1], modifiers: baseModifiers(),
+    economy: { buys: 0, sales: 0, refreshes: 0, upgrades: 0, triples: 0 }, decisions: [],
   }));
   const game = {
-    version: 2, phase: "SHOP", round: 1, maxRounds: MAX_ROUNDS, hero,
+    version: 3, phase: "SHOP", round: 1, maxRounds: MAX_ROUNDS, hero,
     player: {
       id: "player", name: "你", hero: hero.name, health: 30, alive: true, tier: 1, gold: 3,
       board: [], hand: [], shop: [], frozen: false, freeRefresh: hero.power === "FREE_REFRESH",
@@ -401,6 +405,7 @@ export function beginCombat(game, rng = Math.random) {
   const result = simulateBattle(game.player.board, game.currentOpponent.board, game.hero.power, rng);
   game.battle = { ...result, opponent: clone(game.currentOpponent) };
   applyCombatRewards(game, result.rewards.player, result.persistentBuffs.player);
+  applyBotCombatRewards(game.currentOpponent, result.rewards.enemy, result.persistentBuffs.enemy);
   resolvePlayerBattle(game, game.currentOpponent, result);
   resolveBotBattles(game, game.currentOpponent.id, rng);
   return game.battle;
@@ -427,8 +432,8 @@ function combatContext(playerBoard, enemyBoard) {
   };
 }
 
-function snapshotFrame(ctx, label) {
-  ctx.frames.push({ label, player: clone(ctx.sides.player), enemy: clone(ctx.sides.enemy) });
+function snapshotFrame(ctx, label, event = { type: "state" }) {
+  ctx.frames.push({ label, event: clone(event), player: clone(ctx.sides.player), enemy: clone(ctx.sides.enemy) });
 }
 
 function combatBuff(target, attack, health, ctx, side) {
@@ -472,7 +477,7 @@ export function simulateBattle(playerInput, enemyInput, heroPower = null, rng = 
   const ctx = combatContext(player, enemy);
   applyCombatStart(player, enemy, ctx, "player", rng); applyCombatStart(enemy, player, ctx, "enemy", rng);
   processDeaths(player, enemy, ctx, "player", rng); processDeaths(enemy, player, ctx, "enemy", rng);
-  snapshotFrame(ctx, "战斗开始");
+  snapshotFrame(ctx, "战斗开始", { type: "start" });
   if (heroPower === "EDGE_ASSAULT" && player.length) {
     const edges = player.length === 1 ? [player[0]] : [player[0], player[player.length - 1]];
     edges.forEach((item) => { if (player.includes(item)) { combatBuff(item, 2, 1, ctx, "player"); performAttack(player, enemy, item.instanceId, ctx, "player", rng); } });
@@ -495,7 +500,22 @@ export function simulateBattle(playerInput, enemyInput, heroPower = null, rng = 
     winner: player.length && !enemy.length ? "player" : enemy.length && !player.length ? "enemy" : "tie",
     playerBoard: player, enemyBoard: enemy, log: ctx.log, frames: ctx.frames,
     rewards: ctx.rewards, persistentBuffs: ctx.persistentBuffs,
+    insights: buildBattleInsights(ctx.log, player, enemy),
   };
+}
+
+function buildBattleInsights(log, player, enemy) {
+  const insights = [];
+  const summons = log.filter((entry) => entry.summon).length;
+  const reborns = log.filter((entry) => entry.summon?.includes("复生")).length;
+  const shieldBlocks = log.filter((entry) => entry.shieldBroken).length;
+  if (summons) insights.push(`亡语与召唤共补充了${summons}个战力单位`);
+  if (reborns) insights.push(`${reborns}次复生改变了场面数量`);
+  if (shieldBlocks) insights.push(`圣盾抵挡了${shieldBlocks}轮关键伤害`);
+  const playerPower = boardPower(player), enemyPower = boardPower(enemy);
+  if (playerPower !== enemyPower) insights.push(`${playerPower > enemyPower ? "我方" : "敌方"}残局战力领先${Math.abs(playerPower - enemyPower)}点`);
+  if (!insights.length) insights.push("胜负主要由基础属性与攻击顺序决定");
+  return insights.slice(0, 3);
 }
 
 function performAttack(attackers, defenders, attackerId, ctx, side, rng) {
@@ -503,17 +523,30 @@ function performAttack(attackers, defenders, attackerId, ctx, side, rng) {
   if (!attacker || !defenders.length) return;
   const target = randomItem(defenders.filter((item) => item.keywords.includes("TAUNT")).length ? defenders.filter((item) => item.keywords.includes("TAUNT")) : defenders, rng);
   attackers.filter((item) => hasScript(item, "ROARING_RECRUITER") && item.instanceId !== attacker.instanceId && hasTribe(attacker, "DRAGON")).forEach((source) => combatBuff(attacker, source.golden ? 6 : 3, source.golden ? 2 : 1, ctx, side));
+  const targetSide = side === "player" ? "enemy" : "player";
   const dealt = hit(target, attacker.attack);
-  const returned = attacker.keywords.includes("ATTACK_IMMUNE") ? 0 : hit(attacker, target.attack);
-  ctx.log.push({ side, attacker: attacker.name, target: target.name, attack: dealt, counter: returned });
+  const returned = attacker.keywords.includes("ATTACK_IMMUNE") ? { damage: 0, shieldBroken: false, immune: true } : hit(attacker, target.attack);
+  const attackEvent = {
+    type: "attack", attackerSide: side, attackerId: attacker.instanceId,
+    targetSide, targetId: target.instanceId, damageToTarget: dealt.damage,
+    damageToAttacker: returned.damage, targetShieldBroken: dealt.shieldBroken,
+    attackerShieldBroken: returned.shieldBroken, attackerImmune: returned.immune || false,
+  };
+  ctx.log.push({ side, attacker: attacker.name, target: target.name, attack: dealt.damage, counter: returned.damage, shieldBroken: dealt.shieldBroken || returned.shieldBroken });
+  snapshotFrame(ctx, `${attacker.name}攻击${target.name}`, attackEvent);
+  const logStart = ctx.log.length;
   triggerCombatRally(attacker, attackers, ctx, side, rng);
   processDeaths(attackers, defenders, ctx, side, rng); processDeaths(defenders, attackers, ctx, side === "player" ? "enemy" : "player", rng);
-  snapshotFrame(ctx, `${attacker.name} → ${target.name}`);
+  const triggers = ctx.log.slice(logStart).map((entry) => entry.death ? `${entry.death}阵亡` : entry.summon ? `召唤${entry.summon}` : null).filter(Boolean);
+  snapshotFrame(ctx, triggers[0] || `${attacker.name}完成攻击`, { type: "resolve", triggers, attackerSide: side, attackerId: attacker.instanceId });
 }
 
 function hit(target, amount) {
-  if (target.shield && amount > 0) { target.shield = false; target.keywords = target.keywords.filter((key) => key !== "DIVINE_SHIELD"); return 0; }
-  target.health -= amount; return amount;
+  if (target.shield && amount > 0) {
+    target.shield = false; target.keywords = target.keywords.filter((key) => key !== "DIVINE_SHIELD");
+    return { damage: 0, shieldBroken: true };
+  }
+  target.health -= amount; return { damage: amount, shieldBroken: false };
 }
 
 function triggerCombatRally(source, board, ctx, side, rng) {
@@ -544,13 +577,21 @@ function processDeaths(board, opposing, ctx, side, rng) {
       if (hasScript(dead, "ETERNAL_KNIGHT")) ctx.rewards[side].modifiers.eternalDeaths = (ctx.rewards[side].modifiers.eternalDeaths || 0) + 1;
       triggerCombatDeathrattle(dead, board, ctx, side, index, rng);
       if (dead.keywords.includes("REBORN") && !dead.rebornUsed && board.length < MAX_BOARD) {
-        const reborn = { ...clone(dead), instanceId: `${dead.baseId}-${instanceSeed++}`, health: 1, maxHealth: 1, shield: false, rebornUsed: true, keywords: dead.keywords.filter((key) => key !== "REBORN") };
-        board.splice(Math.min(index, board.length), 0, reborn); ctx.log.push({ side, summon: `${reborn.name}（复生）` });
+        const rebornKeywords = [...(dead.rebornKeywords || dead.keywords)].filter((key) => key !== "REBORN");
+        const reborn = {
+          ...clone(dead), instanceId: `${dead.baseId}-${instanceSeed++}`,
+          attack: dead.rebornAttack ?? dead.attack, health: 1, maxHealth: 1,
+          keywords: rebornKeywords, shield: rebornKeywords.includes("DIVINE_SHIELD"),
+          rebornUsed: true, avengeProgress: 0,
+        };
+        board.splice(Math.min(index, board.length), 0, reborn);
+        ctx.log.push({ side, summon: `${reborn.name}（复生）`, keyword: "REBORN", instanceId: reborn.instanceId });
         board.filter((item) => hasScript(item, "BANSHEE_REBORN")).forEach((item) => { combatBuff(item, item.golden ? 14 : 7, item.golden ? 14 : 7, ctx, side); combatKeyword(item, "DIVINE_SHIELD", ctx, side); });
         board.filter((item) => hasScript(item, "FASHION_PHANTOM")).forEach((item) => {
           const target = [...board].reverse().find((candidate) => hasTribe(candidate, "UNDEAD"));
           if (target) combatBuff(target, reborn.attack * (item.golden ? 2 : 1), reborn.attack * (item.golden ? 2 : 1), ctx, side);
         });
+        snapshotFrame(ctx, `${reborn.name}触发复生`, { type: "reborn", side, minionId: reborn.instanceId, keyword: "REBORN" });
       }
       break;
     }
@@ -589,7 +630,7 @@ function triggerCombatDeathrattle(dead, board, ctx, side, index, rng) {
 function applyCombatRewards(game, rewards, persistent) {
   Object.entries(rewards.modifiers).forEach(([key, amount]) => {
     game.player.modifiers[key] = (game.player.modifiers[key] || 0) + amount;
-    if (key === "undeadAttack") game.player.board.filter((item) => hasTribe(item, "UNDEAD")).forEach((item) => buff(item, amount, 0));
+    if (key === "undeadAttack") game.player.board.filter((item) => hasTribe(item, "UNDEAD")).forEach((item) => buffRebornBase(item, amount));
   });
   rewards.cards.forEach((reward) => {
     if (reward.type === "SPELL") addCardToHand(game, SPELLS.find((item) => item.id === reward.id));
@@ -598,6 +639,23 @@ function applyCombatRewards(game, rewards, persistent) {
   });
   Object.entries(persistent).forEach(([instanceId, change]) => {
     const target = game.player.board.find((item) => item.instanceId === instanceId);
+    if (!target) return;
+    buff(target, change.attack, change.health); change.keywords.forEach((key) => addKeyword(target, key));
+  });
+}
+
+function applyBotCombatRewards(bot, rewards, persistent) {
+  Object.entries(rewards.modifiers).forEach(([key, amount]) => {
+    bot.modifiers[key] = (bot.modifiers[key] || 0) + amount;
+    if (key === "undeadAttack") bot.board.filter((item) => hasTribe(item, "UNDEAD")).forEach((item) => buffRebornBase(item, amount));
+  });
+  rewards.cards.forEach((reward) => {
+    if (reward.type === "SPELL") botAddToHand(bot, SPELLS.find((item) => item.id === reward.id));
+    else if (reward.type === "CHROMATIC") botAddToHand(bot, randomItem(CHROMATICS));
+    else if (reward.type === "MINION") botAddToHand(bot, UNDEAD.find((item) => item.id === reward.id));
+  });
+  Object.entries(persistent).forEach(([instanceId, change]) => {
+    const target = bot.board.find((item) => item.instanceId === instanceId);
     if (!target) return;
     buff(target, change.attack, change.health); change.keywords.forEach((key) => addKeyword(target, key));
   });
@@ -615,21 +673,142 @@ function resolvePlayerBattle(game, opponent, result) {
   game.player.alive = game.player.health > 0; opponent.alive = opponent.health > 0;
 }
 
+function botDecision(bot, text) {
+  bot.decisions.unshift(text); bot.decisions = bot.decisions.slice(0, 8);
+}
+
+function botCardScore(card, bot) {
+  const tribe = card.tribe || card.tribes?.[0];
+  const matching = bot.board.filter((item) => hasTribe(item, tribe)).length;
+  const pairs = [...bot.board, ...bot.hand].filter((item) => item.kind === "MINION" && item.baseId === card.baseId && !item.golden).length;
+  const preferred = bot.archetype === "MIXED" || hasTribe(card, bot.archetype) || tribe === "NEUTRAL";
+  const mechanics = (card.deathrattle ? 3 : 0) + (card.battlecry ? 2 : 0) + (card.rally ? 2 : 0) + (card.keywords?.length || 0) * 1.5;
+  return card.attack + card.health + card.tier * 2.2 + matching * 2.5 + pairs * 9 + mechanics + (preferred ? 7 : -8);
+}
+
+function fillBotShop(bot, rng) {
+  const pool = availableMinions(bot.tier);
+  bot.shop = Array.from({ length: shopSize(bot.tier) }, () => createMinion(randomItem(pool, rng), false, bot.modifiers));
+}
+
+function botAddToHand(bot, definition, golden = false) {
+  if (!definition || bot.hand.length >= MAX_HAND) return false;
+  bot.hand.push(definition.kind === "SPELL" ? createSpell(definition) : createMinion(definition, golden, bot.modifiers));
+  return true;
+}
+
+function checkBotTriples(bot, baseId, rng) {
+  const copies = [...bot.board, ...bot.hand].filter((item) => item.kind === "MINION" && item.baseId === baseId && !item.golden);
+  if (copies.length < 3) return false;
+  const ids = new Set(copies.slice(0, 3).map((item) => item.instanceId));
+  const definition = [...MINIONS, ...CHROMATICS].find((item) => item.id === baseId);
+  bot.board = bot.board.filter((item) => !ids.has(item.instanceId));
+  bot.hand = bot.hand.filter((item) => !ids.has(item.instanceId));
+  botAddToHand(bot, definition, true);
+  const discoveries = shuffle(MINIONS.filter((item) => item.tier === Math.min(6, bot.tier + 1)), rng).slice(0, 3);
+  const discovered = [...discoveries].sort((a, b) => botCardScore(b, bot) - botCardScore(a, bot))[0];
+  botAddToHand(bot, discovered);
+  bot.economy.triples += 1; botDecision(bot, `三连合成金色${definition.name}`);
+  return true;
+}
+
+function botTriggerBattlecry(bot, source, rng) {
+  if (!source.battlecry) return;
+  const repeats = bot.board.some((item) => hasScript(item, "DOUBLE_BATTLECRIES")) ? 2 : 1;
+  for (let loop = 0; loop < repeats; loop += 1) {
+    const mult = source.golden ? 2 : 1;
+    const otherDragons = bot.board.filter((item) => item.instanceId !== source.instanceId && hasTribe(item, "DRAGON"));
+    if (source.battlecry === "NERUBIAN_DEATHSWARM") {
+      bot.modifiers.undeadAttack += mult; bot.board.filter((item) => hasTribe(item, "UNDEAD")).forEach((item) => buffRebornBase(item, mult));
+    } else if (source.battlecry === "SYNTHESIZER") otherDragons.forEach((item) => buff(item, mult, mult));
+    else if (source.battlecry === "GET_RING") botAddToHand(bot, SPELLS.find((item) => item.id === "BG28_168"));
+    else if (source.battlecry === "GET_CHROMATIC") botAddToHand(bot, randomItem(CHROMATICS, rng));
+    else if (source.battlecry === "GET_RANDOM_SPELL") botAddToHand(bot, randomItem(SPELLS.filter((item) => item.id !== "BG28_604"), rng));
+    else if (source.battlecry === "SPELL_HEALTH") bot.modifiers.spellHealth += mult;
+    else if (source.battlecry === "SPELL_ATTACK") bot.modifiers.spellAttack += mult;
+    else if (source.battlecry === "GREEN_CHROMATIC") otherDragons.forEach((item) => buff(item, mult, 3 * mult));
+    else if (source.battlecry === "BRONZE_CHROMATIC") otherDragons.forEach((item) => buff(item, 3 * mult, mult));
+  }
+  bot.board.filter((item) => hasScript(item, "KALECGOS")).forEach((kalecgos) => {
+    const amount = kalecgos.golden ? 4 : 2;
+    bot.board.filter((item) => hasTribe(item, "DRAGON")).forEach((item) => buff(item, amount, amount));
+  });
+}
+
+function botPlayMinion(bot, card, rng) {
+  const index = bot.hand.findIndex((item) => item.instanceId === card.instanceId);
+  if (index < 0) return false;
+  if (bot.board.length >= MAX_BOARD) {
+    const weakest = [...bot.board].sort((a, b) => botCardScore(a, bot) - botCardScore(b, bot))[0];
+    if (botCardScore(card, bot) <= botCardScore(weakest, bot) + 2) return false;
+    bot.board.splice(bot.board.indexOf(weakest), 1); bot.gold += 1; bot.economy.sales += 1;
+    botDecision(bot, `出售${weakest.name}`);
+  }
+  bot.hand.splice(index, 1); bot.board.push(card); botTriggerBattlecry(bot, card, rng);
+  return true;
+}
+
+function botCastSpell(bot, spell, rng) {
+  const target = [...bot.board].sort((a, b) => botCardScore(b, bot) - botCardScore(a, bot))[0];
+  if (spell.script === "RING") bot.board.forEach((item) => buff(item, 1 + bot.modifiers.spellAttack, 1 + bot.modifiers.spellHealth));
+  else if (spell.script === "FORTIFY" && target) { buff(target, bot.modifiers.spellAttack, 3 + bot.modifiers.spellHealth); addKeyword(target, "TAUNT"); }
+  else if (spell.script === "COIN") bot.gold += 1;
+  else if (spell.script === "BANANA" && target) buff(target, 2 + bot.modifiers.spellAttack, 2 + bot.modifiers.spellHealth);
+  else if (spell.script === "MIGHTY_BREATH") bot.board.forEach((item) => buff(item, 2 + (hasTribe(item, "DRAGON") ? 2 : 0), 1 + (hasTribe(item, "DRAGON") ? 1 : 0)));
+  else if (spell.script === "SLAUGHTER") {
+    const victim = bot.board.find((item) => hasTribe(item, "UNDEAD"));
+    if (victim) { bot.board.splice(bot.board.indexOf(victim), 1); bot.modifiers.undeadAttack += 5; bot.board.filter((item) => hasTribe(item, "UNDEAD")).forEach((item) => buffRebornBase(item, 5)); }
+  } else if (spell.script === "FREE_REFRESH") {
+    fillBotShop(bot, rng);
+  }
+  bot.board.filter((item) => hasScript(item, "HOOKTAIL")).forEach((source) => bot.board.forEach((item) => buff(item, source.golden ? 2 : 1, 0)));
+}
+
+function botPositionBoard(bot) {
+  const priority = (item) => {
+    if (item.keywords.includes("TAUNT")) return -30;
+    if (item.deathrattle) return -18;
+    if (item.keywords.includes("ATTACK_IMMUNE")) return -10;
+    if (hasScript(item, "DOUBLE_DEATHRATTLES") || hasScript(item, "KALECGOS") || hasScript(item, "DOUBLE_END_TURN")) return 25;
+    return -item.attack * .1;
+  };
+  bot.board.sort((a, b) => priority(a) - priority(b));
+}
+
+function applyBotEndTurn(bot, rng) {
+  const repeats = bot.board.some((item) => hasScript(item, "DOUBLE_END_TURN")) ? 2 : 1;
+  for (let loop = 0; loop < repeats; loop += 1) [...bot.board].forEach((source) => {
+    const mult = source.golden ? 2 : 1;
+    if (source.endTurn === "SPELL_BONUS") { bot.modifiers.spellAttack += mult; bot.modifiers.spellHealth += mult; }
+    if (source.endTurn === "GET_TWO_SPELLS") for (let index = 0; index < 2 * mult; index += 1) botAddToHand(bot, randomItem(SPELLS.filter((item) => item.id !== "BG28_604"), rng));
+  });
+}
+
 function recruitBot(bot, round, rng) {
-  bot.gold = Math.min(10, round + 2);
-  if (round > 1 && round % 2 === 1 && bot.tier < 6) bot.tier += 1;
-  const pool = MINIONS.filter((item) => item.tier <= bot.tier && (bot.archetype === "MIXED" || hasTribe(item, bot.archetype) || item.tribe === "NEUTRAL"));
-  const desired = Math.min(7, Math.ceil(round * .75));
-  while (bot.board.length < desired) bot.board.push(createMinion(randomItem(pool, rng), false, bot.modifiers));
-  if (bot.board.length >= desired && round > 2) {
-    const weakest = [...bot.board].sort((a, b) => a.attack + a.health - b.attack - b.health)[0];
-    const candidate = createMinion(randomItem(pool, rng), false, bot.modifiers);
-    if (candidate.attack + candidate.health > weakest.attack + weakest.health) bot.board[bot.board.indexOf(weakest)] = candidate;
+  bot.gold = Math.min(10, round + 2); bot.decisions = [];
+  fillBotShop(bot, rng);
+  const desiredTier = Math.min(6, 1 + Math.floor(round / 2));
+  if (bot.tier < desiredTier && bot.gold >= bot.upgradeCost) {
+    bot.gold -= bot.upgradeCost; bot.tier += 1; bot.upgradeCost = UPGRADE_BASE_COST[bot.tier] ?? 0;
+    bot.economy.upgrades += 1; botDecision(bot, `升级到${bot.tier}级酒馆`); fillBotShop(bot, rng);
   }
-  if (round >= 4 && bot.board.length) {
-    const target = randomItem(bot.board, rng);
-    buff(target, 1, 1);
+  let guard = 0, refreshes = 0;
+  while (guard++ < 18) {
+    [...bot.hand].filter((item) => item.kind === "SPELL").forEach((spell) => { botCastSpell(bot, spell, rng); bot.hand.splice(bot.hand.indexOf(spell), 1); });
+    [...bot.hand].filter((item) => item.kind === "MINION").sort((a, b) => botCardScore(b, bot) - botCardScore(a, bot)).forEach((card) => botPlayMinion(bot, card, rng));
+    if (bot.gold < 3 || bot.hand.length >= MAX_HAND) break;
+    const choice = [...bot.shop].sort((a, b) => botCardScore(b, bot) - botCardScore(a, bot))[0];
+    const weakest = [...bot.board].sort((a, b) => botCardScore(a, bot) - botCardScore(b, bot))[0];
+    const useful = bot.board.length < MAX_BOARD || !weakest || botCardScore(choice, bot) > botCardScore(weakest, bot) + 2 || [...bot.board, ...bot.hand].some((item) => item.baseId === choice.baseId);
+    if (!choice || !useful) {
+      if (bot.gold < 1 || refreshes++ >= 2) break;
+      bot.gold -= 1; bot.economy.refreshes += 1; botDecision(bot, "刷新酒馆"); fillBotShop(bot, rng); continue;
+    }
+    bot.shop.splice(bot.shop.indexOf(choice), 1); bot.gold -= 3; bot.hand.push(choice);
+    bot.economy.buys += 1; botDecision(bot, `购买${choice.name}`); checkBotTriples(bot, choice.baseId, rng);
   }
+  [...bot.hand].filter((item) => item.kind === "MINION").sort((a, b) => botCardScore(b, bot) - botCardScore(a, bot)).forEach((card) => botPlayMinion(bot, card, rng));
+  applyBotEndTurn(bot, rng); botPositionBoard(bot);
 }
 
 function resolveBotBattles(game, excluded, rng) {
@@ -651,7 +830,10 @@ export function advanceRound(game, rng = Math.random) {
   game.player.upgradeCost = game.player.tier < 6 ? Math.max(0, game.player.upgradeCost - 1) : 0;
   game.player.freeRefresh = game.hero.power === "FREE_REFRESH";
   game.player.board.forEach((item) => { item.activatedThisTurn = false; });
-  fillShop(game, false, rng); game.bots.filter((item) => item.alive).forEach((bot) => recruitBot(bot, game.round, rng)); chooseOpponent(game, rng); return true;
+  fillShop(game, false, rng); game.bots.filter((item) => item.alive).forEach((bot) => {
+    bot.upgradeCost = bot.tier < 6 ? Math.max(0, bot.upgradeCost - 1) : 0;
+    recruitBot(bot, game.round, rng);
+  }); chooseOpponent(game, rng); return true;
 }
 
 function chooseOpponent(game, rng) {
@@ -661,10 +843,11 @@ function chooseOpponent(game, rng) {
 
 function addPermanentUndeadAttack(game, amount) {
   game.player.modifiers.undeadAttack += amount;
-  game.player.board.filter((item) => hasTribe(item, "UNDEAD")).forEach((item) => buff(item, amount, 0));
+  game.player.board.filter((item) => hasTribe(item, "UNDEAD")).forEach((item) => buffRebornBase(item, amount));
 }
 
 function buff(minion, attack, health) { minion.attack += attack; minion.health += health; minion.maxHealth += health; checkThresholds(minion); }
+function buffRebornBase(minion, attack) { minion.rebornAttack = (minion.rebornAttack ?? minion.attack) + attack; buff(minion, attack, 0); }
 function addKeyword(minion, keyword) { if (!minion.keywords.includes(keyword)) minion.keywords.push(keyword); }
 function checkThresholds(minion) { if (hasScript(minion, "SCARLET_SURVIVOR") && minion.attack >= 6) addKeyword(minion, "DIVINE_SHIELD"); }
 function message(game, text) { game.messages.unshift(text); game.messages = game.messages.slice(0, 30); }

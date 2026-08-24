@@ -20,12 +20,16 @@ const game = createGame(HEROES[0].id, fixed);
 assert.equal(game.player.gold, 3);
 assert.equal(game.player.shop.length, 3);
 assert.equal(game.bots.length, 7);
+assert.ok(game.bots.every((bot) => bot.economy.buys >= 1 && bot.board.length >= 1), "电脑首回合应实际消费金币购买并上场");
+assert.ok(game.bots.every((bot) => Array.isArray(bot.shop) && Array.isArray(bot.hand) && bot.upgradeCost === 5), "电脑应保留商店、手牌和升级费用");
 const firstShop = game.player.shop[0];
 assert.equal(buyMinion(game, firstShop.instanceId), true);
 assert.equal(playCard(game, game.player.hand[0].instanceId, null, true, fixed), true);
 assert.equal(game.player.board.length, 1);
 assert.ok(beginCombat(game, fixed));
 assert.ok(game.battle.frames.length >= 1, "战斗应生成独立页面可播放帧");
+assert.ok(game.battle.frames.some((frame) => frame.event?.type === "attack" && frame.event.attackerId && frame.event.targetId), "战斗帧应标记攻击者、目标和伤害");
+assert.ok(game.battle.insights.length >= 1, "战斗结束应生成关键原因摘要");
 
 const refreshGame = createGame("TB_BaconShop_HERO_57", fixed);
 assert.equal(refreshShop(refreshGame, fixed), true);
@@ -38,14 +42,28 @@ upgradeGame.player.gold = 5;
 assert.equal(upgradeTavern(upgradeGame), true);
 assert.equal(upgradeGame.player.tier, 2);
 
+const botEconomyGame = createGame(HEROES[0].id, fixed);
+botEconomyGame.player.board = [createMinion({ id: "bot-check", name: "经营测试", tribe: "NEUTRAL", tribes: ["NEUTRAL"], tier: 6, attack: 50, health: 50, keywords: [] })];
+beginCombat(botEconomyGame, fixed);
+advanceRound(botEconomyGame, fixed);
+assert.ok(botEconomyGame.bots.some((bot) => bot.economy.upgrades >= 1 && bot.tier >= 2), "电脑应根据金币和升级费用升本");
+assert.ok(botEconomyGame.bots.every((bot) => bot.decisions.length >= 1), "电脑应记录本回合真实经营决策");
+
 const tokenSource = createMinion(minion("BG28_300"));
 const giant = createMinion({ id: "giant", name: "测试巨人", tribe: "NEUTRAL", tribes: ["NEUTRAL"], tier: 6, attack: 30, health: 30, keywords: [] });
 const tokenBattle = simulateBattle([tokenSource], [giant], null, fixed);
 assert.ok(tokenBattle.log.some((entry) => entry.summon === "骷髅"), "无害的骨颅应召唤骷髅");
 
 const reborn = createMinion(minion("BG25_001"));
+reborn.attack += 20;
 const rebornBattle = simulateBattle([reborn], [giant], null, fixed);
 assert.ok(rebornBattle.log.some((entry) => entry.summon?.includes("复生")), "复活的骑兵应复生");
+const rebornFrame = rebornBattle.frames.find((frame) => frame.event?.type === "reborn");
+assert.ok(rebornFrame, "复生应生成独立的词条触发帧");
+const returnedRider = rebornFrame.player.find((item) => item.baseId === "BG25_001");
+assert.equal(returnedRider.attack, 2, "复生不应保留战斗中的临时攻击增益");
+assert.equal(returnedRider.health, 1, "复生应以1点生命值返回");
+assert.ok(!returnedRider.keywords.includes("REBORN"), "复生返回后应移除复生词条");
 
 const rallyDragon = createMinion(minion("BG29_888"));
 const weak = createMinion({ id: "weak", name: "木桩", tribe: "NEUTRAL", tribes: ["NEUTRAL"], tier: 1, attack: 0, health: 30, keywords: [] });
@@ -74,6 +92,14 @@ assert.equal(activateMinion(activateGame, activateGame.player.board[0].instanceI
 assert.equal(activateGame.player.hand.length, 1);
 assert.ok(CHROMATICS.some((item) => item.id === activateGame.player.hand[0].baseId));
 
+const targetedActivateGame = createGame(HEROES[0].id, fixed);
+targetedActivateGame.player.gold = 10;
+targetedActivateGame.player.board = [createMinion(minion("BG36_511")), createMinion(minion("BG28_300"))];
+assert.equal(activateMinion(targetedActivateGame, targetedActivateGame.player.board[0].instanceId, null, fixed), "PENDING");
+assert.equal(resolvePendingTarget(targetedActivateGame, targetedActivateGame.player.board[1].instanceId, fixed), true);
+assert.equal(targetedActivateGame.player.board[0].attack, 7, "丧钟死灵发动后应获得+4/+4");
+assert.equal(targetedActivateGame.player.board.filter((item) => item.baseId === "BG_ICC_026t").length, 2, "发动消灭亡语随从时应正确触发亡语");
+
 const magneticGame = createGame(HEROES[0].id, fixed);
 magneticGame.player.board = [createMinion(minion("BG25_001"))];
 const hand = createMinion(minion("BG_DEEP_015"));
@@ -99,4 +125,4 @@ for (let round = 1; round <= 10; round += 1) {
 }
 assert.equal(fullGame.phase, "GAME_OVER");
 
-console.log("engine tests passed: 43 tribe cards, targeting, spells, magnetic, rally, reborn, battle frames, 160 fuzz battles");
+console.log("engine tests passed: 43 tribe cards, economic bots, combat events, insights, targeting, spells, magnetic, rally, reborn, 160 fuzz battles");

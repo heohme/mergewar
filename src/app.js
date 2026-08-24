@@ -1,18 +1,20 @@
-import { HEROES, MAX_BOARD, MINIONS, TRIBES } from "./data.js";
+import { HEROES, MAX_BOARD, MINIONS, TRIBES } from "./data.js?v=4";
 import {
   activateMinion, advanceRound, beginCombat, buyMinion, cancelPendingAction, canEndTurn,
   castSpell, chooseDiscover, createGame, gameResult, moveMinion, playCard, playerRank,
   refreshShop, reorderMinion, resolvePendingTarget, sellMinion, standings, toggleFreeze,
   upgradeTavern, useHeroPower,
-} from "./engine.js";
+} from "./engine.js?v=4";
 
 const app = document.querySelector("#app");
-const SAVE_KEY = "mergewar-save-v2";
+const SAVE_KEY = "mergewar-save-v3";
 let game = loadGame();
 let selectedBoardId = null;
 let selectedCard = null;
 let battleFrame = 0;
 let battleTimer = null;
+let battlePlaying = false;
+let battleSpeed = 1;
 let pointerDrag = null;
 let suppressClickUntil = 0;
 
@@ -24,7 +26,7 @@ function saveGame() {
 function loadGame() {
   try {
     const saved = JSON.parse(localStorage.getItem(SAVE_KEY));
-    return saved?.version === 2 ? saved : null;
+    return saved?.version === 3 ? saved : null;
   } catch { return null; }
 }
 
@@ -94,7 +96,7 @@ function renderShop() {
   app.innerHTML = `<main class="game-shell shop-screen">${renderTopbar()}${targetHint}
     <div class="landscape-layout">${renderStandings()}
       <section class="recruit-stage">
-        <div class="opponent-bar"><div><small>下一位对手</small><b>${opponent.name}</b><span>${opponent.hero} · ${opponent.tier}级酒馆</span></div>
+        <div class="opponent-bar"><div><small>下一位对手</small><b>${opponent.name}</b><span>${opponent.hero} · ${opponent.tier}级酒馆 · 剩余${opponent.gold}铸币</span><em>${opponent.decisions?.[0] || "正在规划阵容"}</em></div>
           <div class="enemy-mini">${opponent.board.map((item) => `<span title="${item.name}"><img src="${item.imageUrl}" alt=""><i>${item.attack}/${item.health}</i></span>`).join("")}</div></div>
         <section class="zone shop-zone"><header><div><small>招募阶段</small><h2>${game.player.tier}级酒馆</h2></div><div class="shop-actions">
           <button data-action="upgrade" ${game.player.tier >= 6 || game.player.gold < game.player.upgradeCost ? "disabled" : ""}>升级 · ${game.player.tier >= 6 ? "满级" : game.player.upgradeCost}</button>
@@ -129,18 +131,45 @@ function renderBattle() {
   battleFrame = Math.min(battleFrame, frames.length - 1);
   const frame = frames[battleFrame];
   const finished = battleFrame >= frames.length - 1;
+  if (finished) battlePlaying = false;
   app.innerHTML = `<main class="battle-screen">${renderTopbar()}
     <section class="battle-stage">
-      <header><div><small>第${game.round}回合 · ${battle.opponent.name}</small><h1>${frame.label}</h1></div><div class="playback"><button data-action="battle-prev" ${battleFrame === 0 ? "disabled" : ""}>‹</button><span>${battleFrame + 1}/${frames.length}</span><button data-action="battle-next" ${finished ? "disabled" : ""}>›</button><button data-action="battle-skip">跳到结果</button></div></header>
-      <div class="combat-board enemy-board"><label>${battle.opponent.name}</label>${frame.enemy.map((item) => battleCard(item)).join("") || `<div class="defeated">全军覆没</div>`}</div>
+      <header><div><small>第${game.round}回合 · ${battle.opponent.name}</small><h1>${frame.label}</h1></div><div class="playback">
+        <button data-action="battle-toggle" ${finished ? "disabled" : ""}>${battlePlaying ? "暂停" : "播放"}</button>
+        <button data-action="battle-speed">${battleSpeed}×</button><button data-action="battle-prev" ${battleFrame === 0 ? "disabled" : ""}>‹</button><span>${battleFrame + 1}/${frames.length}</span><button data-action="battle-next" ${finished ? "disabled" : ""}>›</button><button data-action="battle-skip">跳到结果</button>
+      </div></header>
+      ${renderAttackVector(frame)}
+      <div class="combat-board enemy-board"><label>${battle.opponent.name}</label>${frame.enemy.map((item) => battleCard(item, "enemy", frame)).join("") || `<div class="defeated">全军覆没</div>`}</div>
       <div class="versus-line"><span></span><b>VS</b><span></span></div>
-      <div class="combat-board player-board"><label>你的战队</label>${frame.player.map((item) => battleCard(item)).join("") || `<div class="defeated">全军覆没</div>`}</div>
-      <footer><p>${finished ? battleResultText(battle) : "战斗正在逐步结算，可手动前进或跳过。"}</p><button data-action="continue" ${finished ? "" : "disabled"}>${!game.player.alive || game.round >= game.maxRounds ? "查看结果" : "返回酒馆"}</button></footer>
+      <div class="combat-board player-board"><label>你的战队</label>${frame.player.map((item) => battleCard(item, "player", frame)).join("") || `<div class="defeated">全军覆没</div>`}</div>
+      <footer><div><p>${finished ? battleResultText(battle) : frame.event?.type === "attack" ? "高亮卡牌正在交战，数字为本次承受的伤害。" : frame.event?.type === "reborn" ? "复生：该随从以初始攻击力和1点生命值重新返回战场。" : "触发效果结算中，可暂停或调整播放速度。"}</p>${finished ? `<div class="battle-insights">${(battle.insights || []).map((text) => `<span>${text}</span>`).join("")}</div>` : ""}</div><button data-action="continue" ${finished ? "" : "disabled"}>${!game.player.alive || game.round >= game.maxRounds ? "查看结果" : "返回酒馆"}</button></footer>
     </section></main>`;
 }
 
-function battleCard(card) {
-  return `<article class="combat-card ${card.golden ? "golden" : ""} ${card.shield ? "shield" : ""}"><img src="${card.imageUrl}" alt=""><b>${card.name}</b><div><span>${card.attack}</span><span>${Math.max(0, card.health)}</span></div></article>`;
+function renderAttackVector(frame) {
+  const event = frame.event;
+  if (event?.type !== "attack") return "";
+  const from = frame[event.attackerSide] || [], to = frame[event.targetSide] || [];
+  const fromIndex = Math.max(0, from.findIndex((item) => item.instanceId === event.attackerId));
+  const toIndex = Math.max(0, to.findIndex((item) => item.instanceId === event.targetId));
+  const fromX = ((fromIndex + .5) / Math.max(1, from.length)) * 100;
+  const toX = ((toIndex + .5) / Math.max(1, to.length)) * 100;
+  const fromY = event.attackerSide === "enemy" ? 35 : 65;
+  const toY = event.targetSide === "enemy" ? 35 : 65;
+  return `<svg class="attack-vector" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><defs><marker id="attack-arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z"></path></marker></defs><line x1="${fromX}" y1="${fromY}" x2="${toX}" y2="${toY}" marker-end="url(#attack-arrow)"></line></svg>`;
+}
+
+function battleCard(card, side, frame) {
+  const event = frame.event || {};
+  const attacking = event.attackerSide === side && event.attackerId === card.instanceId;
+  const targeted = event.targetSide === side && event.targetId === card.instanceId;
+  const reborned = event.type === "reborn" && event.side === side && event.minionId === card.instanceId;
+  const damage = attacking ? event.damageToAttacker : targeted ? event.damageToTarget : 0;
+  const shieldBroken = attacking ? event.attackerShieldBroken : targeted ? event.targetShieldBroken : false;
+  const immune = attacking && event.attackerImmune;
+  const keywordNames = { REBORN: "复生", TAUNT: "嘲讽", DIVINE_SHIELD: "圣盾", WINDFURY: "风怒", ATTACK_IMMUNE: "攻击免疫" };
+  const keywords = (card.keywords || []).map((key) => keywordNames[key]).filter(Boolean);
+  return `<article class="combat-card ${card.golden ? "golden" : ""} ${card.shield ? "shield" : ""} ${attacking ? "attacking" : ""} ${targeted ? "targeted" : ""} ${reborned ? "reborned" : ""}" data-combat-id="${card.instanceId}"><img src="${card.imageUrl}" alt=""><b>${card.name}</b>${keywords.length ? `<small class="combat-keywords">${keywords.join(" · ")}</small>` : ""}${event.type === "attack" && (damage || shieldBroken || immune) ? `<i class="float-change ${shieldBroken || immune ? "blocked" : ""}">${shieldBroken ? "圣盾破裂" : immune ? "免疫" : `-${damage}`}</i>` : ""}${reborned ? `<i class="keyword-pop">复生</i>` : ""}<div><span>${card.attack}</span><span>${Math.max(0, card.health)}</span></div></article>`;
 }
 
 function battleResultText(battle) {
@@ -164,12 +193,18 @@ function render() {
 }
 
 function startBattlePlayback() {
-  battleFrame = 0; render();
-  const advance = () => {
-    if (!game?.battle || battleFrame >= game.battle.frames.length - 1) return;
-    battleFrame += 1; render(); battleTimer = setTimeout(advance, 650);
-  };
-  battleTimer = setTimeout(advance, 800);
+  battleFrame = 0; battlePlaying = true; battleSpeed = 1; saveGame(); render(); scheduleBattlePlayback(800);
+}
+
+function scheduleBattlePlayback(delay = 650) {
+  clearTimeout(battleTimer);
+  if (!battlePlaying || !game?.battle || battleFrame >= game.battle.frames.length - 1) return;
+  battleTimer = setTimeout(() => {
+    if (!battlePlaying || !game?.battle) return;
+    battleFrame = Math.min(game.battle.frames.length - 1, battleFrame + 1);
+    if (battleFrame >= game.battle.frames.length - 1) battlePlaying = false;
+    render(); scheduleBattlePlayback();
+  }, Math.max(120, delay / battleSpeed));
 }
 
 function findCard(instanceId) {
@@ -181,6 +216,10 @@ app.addEventListener("click", (event) => {
   const target = event.target.closest("[data-action], [data-hero], .game-card[data-zone=board]");
   if (!target) return;
   if (target.dataset.hero) { game = createGame(target.dataset.hero); selectedCard = null; saveGame(); render(); return; }
+  const pendingCard = event.target.closest(".game-card[data-card-id]");
+  if (game?.pendingAction && pendingCard && game.pendingAction.validIds.includes(pendingCard.dataset.cardId)) {
+    resolvePendingTarget(game, pendingCard.dataset.cardId); saveGame(); render(); return;
+  }
   const action = target.dataset.action;
   const id = target.dataset.id || target.closest("[data-card-id]")?.dataset.cardId;
   if (!action && target.matches(".game-card[data-zone=board]")) {
@@ -197,15 +236,20 @@ app.addEventListener("click", (event) => {
     discover: () => chooseDiscover(game, id), "cancel-target": () => cancelPendingAction(game),
     "normal-play": () => resolvePendingTarget(game, null), inspect: () => { selectedCard = findCard(id); },
     combat: () => { if (beginCombat(game)) startBattlePlayback(); },
-    "battle-prev": () => { battleFrame = Math.max(0, battleFrame - 1); },
-    "battle-next": () => { battleFrame = Math.min(game.battle.frames.length - 1, battleFrame + 1); },
-    "battle-skip": () => { battleFrame = game.battle.frames.length - 1; },
-    continue: () => { advanceRound(game); battleFrame = 0; },
+    "battle-toggle": () => { battlePlaying = !battlePlaying; },
+    "battle-speed": () => { battleSpeed = battleSpeed === 1 ? 2 : battleSpeed === 2 ? 4 : 1; },
+    "battle-prev": () => { battlePlaying = false; battleFrame = Math.max(0, battleFrame - 1); },
+    "battle-next": () => { battlePlaying = false; battleFrame = Math.min(game.battle.frames.length - 1, battleFrame + 1); },
+    "battle-skip": () => { battlePlaying = false; battleFrame = game.battle.frames.length - 1; },
+    continue: () => { battlePlaying = false; advanceRound(game); battleFrame = 0; },
     restart: () => { game = null; localStorage.removeItem(SAVE_KEY); },
     "new-game": () => { if (confirm("确定放弃当前对局并重新选择英雄吗？")) { game = null; localStorage.removeItem(SAVE_KEY); } },
   };
   actions[action]?.();
-  if (action !== "combat") { saveGame(); render(); }
+  if (action !== "combat") {
+    saveGame(); render();
+    if (game?.phase === "COMBAT" && battlePlaying) scheduleBattlePlayback();
+  }
 });
 
 app.addEventListener("dragstart", (event) => {
