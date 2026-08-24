@@ -1,7 +1,7 @@
 import { MINIONS } from "../src/data.js";
 import {
   activateMinion, advanceRound, beginCombat, buyMinion, castSpell, chooseDiscover,
-  createGame, gameResult, playCard, refreshShop, upgradeTavern,
+  createGame, gameResult, playCard, refreshShop, resolvePendingTarget, upgradeTavern,
 } from "../src/engine.js";
 
 function seeded(seed) {
@@ -10,6 +10,7 @@ function seeded(seed) {
 }
 
 function score(card, board) {
+  if (card.kind === "SPELL") return 8 + card.tier * 1.5 - card.cost;
   const sameTribe = board.filter((item) => item.tribe === card.tribe).length;
   const pair = board.filter((item) => item.baseId === card.baseId).length;
   return card.attack + card.health + card.tier * 1.5 + sameTribe * 2 + pair * 7 + (card.text?.length || 0) / 40;
@@ -18,19 +19,30 @@ function score(card, board) {
 function recruit(game, rng) {
   if (game.player.tier < Math.min(6, 1 + Math.floor(game.round / 2)) && game.player.gold >= game.player.upgradeCost) upgradeTavern(game);
   let guard = 0;
-  while (game.player.gold >= 3 && game.player.hand.length < 10 && guard++ < 12) {
-    const choice = [...game.player.shop].sort((a, b) => score(b, game.player.board) - score(a, game.player.board))[0];
+  while (game.player.gold >= 1 && game.player.hand.length < 10 && guard++ < 12) {
+    const affordable = game.player.shop.filter((item) => item.healthCost ? game.player.health > item.cost : game.player.gold >= (item.kind === "SPELL" ? item.cost : 3));
+    const choice = [...affordable].sort((a, b) => score(b, game.player.board) - score(a, game.player.board))[0];
     if (!choice) { refreshShop(game, rng); continue; }
     buyMinion(game, choice.instanceId);
     const bought = game.player.hand.find((item) => item.baseId === choice.baseId);
-    if (bought && game.player.board.length < 7) playCard(game, bought.instanceId, null, true, rng);
+    if (bought?.kind === "SPELL") {
+      const result = castSpell(game, bought.instanceId, null, rng);
+      if (result === "PENDING") resolvePendingTarget(game, game.pendingAction.validIds[0], rng);
+    } else if (bought && game.player.board.length < 7) playCard(game, bought.instanceId, null, true, rng);
   }
   for (const card of [...game.player.hand]) {
-    if (card.kind === "SPELL") castSpell(game, card.instanceId, game.player.board[0]?.instanceId, rng);
+    if (card.kind === "SPELL") {
+      const result = castSpell(game, card.instanceId, null, rng);
+      if (result === "PENDING") resolvePendingTarget(game, game.pendingAction.validIds[0], rng);
+    }
     else if (game.player.board.length < 7) playCard(game, card.instanceId, null, true, rng);
   }
   for (const card of game.player.board) if (card.activate && game.player.gold >= card.activateCost) activateMinion(game, card.instanceId, null, rng);
-  if (game.pendingDiscover) chooseDiscover(game, game.pendingDiscover[0].id);
+  let choices = 0;
+  while (game.pendingDiscover && choices++ < 4) {
+    const pending = Array.isArray(game.pendingDiscover) ? { items: game.pendingDiscover } : game.pendingDiscover;
+    chooseDiscover(game, pending.items[0].id, rng);
+  }
 }
 
 const games = Number(process.argv[2] || 300);

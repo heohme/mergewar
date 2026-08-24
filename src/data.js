@@ -1,17 +1,24 @@
 const art = (id) => `https://art.hearthstonejson.com/v1/256x/${id}.jpg`;
 const m = (id, name, tribe, tier, attack, health, text, extra = {}) => ({ id, cardId: id, name, tribe, tribes: extra.tribes || [tribe], tier, attack, health, text, imageUrl: art(id), ...extra });
-const s = (id, name, tier, text, script, extra = {}) => ({ id, cardId: id, kind: "SPELL", name, tier, text, script, imageUrl: art(id), ...extra });
+const s = (id, name, tier, cost, text, script, extra = {}) => ({ id, cardId: id, kind: "SPELL", name, tier, cost, text, script, pool: true, imageUrl: art(id), ...extra });
 
 export const DATA_SNAPSHOT = {
   source: "HearthstoneJSON latest/zhCN/cards.json",
-  retrievedAt: "2026-08-23",
-  pool: "单人酒馆战棋：亡灵21张、龙22张",
+  retrievedAt: "2026-08-24",
+  pool: "单人酒馆战棋：亡灵、龙、机械、元素、野猪人、野兽及完整中立池（排除双打专属与7级随从）",
   note: "私有玩法研究快照，不随线上版本自动漂移。",
 };
 
 export const TRIBES = {
   UNDEAD: { name: "亡灵", icon: "☠" },
   DRAGON: { name: "龙", icon: "龙" },
+  MECHANICAL: { name: "机械", icon: "⚙" },
+  ELEMENTAL: { name: "元素", icon: "✧" },
+  QUILBOAR: { name: "野猪人", icon: "◆" },
+  BEAST: { name: "野兽", icon: "爪" },
+  MURLOC: { name: "鱼人", icon: "≈" },
+  DEMON: { name: "恶魔", icon: "♠" },
+  PIRATE: { name: "海盗", icon: "☠︎" },
   NEUTRAL: { name: "中立", icon: "◇" },
 };
 
@@ -32,7 +39,7 @@ export const UNDEAD = [
   m("BG28_309", "木乃伊工匠", "UNDEAD", 3, 5, 2, "亡语：使一个不同的友方亡灵获得复生。", { deathrattle: { grantRebornRandom: true } }),
   m("BG30_125", "遗骸看管者", "UNDEAD", 3, 3, 3, "亡语：召唤三个1/1的骷髅。", { deathrattle: { summon: "skeleton", count: 3 } }),
   m("BG33_323", "尘骨毁灭者", "UNDEAD", 3, 2, 6, "进击：在本局对战中，你的亡灵拥有+1攻击力（无论它们在哪）。", { rally: "UNDEAD_ATTACK" }),
-  m("BG_DEEP_015", "义肢假手", "UNDEAD", 3, 3, 1, "磁力。复生。可以磁力吸附在机械或亡灵上。", { keywords: ["MAGNETIC", "REBORN"], scripts: ["MAGNETIC"] }),
+  m("BG_DEEP_015", "义肢假手", "UNDEAD", 3, 3, 1, "磁力。复生。可以磁力吸附在机械或亡灵上。", { tribes: ["UNDEAD", "MECHANICAL"], keywords: ["MAGNETIC", "REBORN"], scripts: ["MAGNETIC", "BG_DEEP_015"] }),
   m("BG32_340", "噬渊施法者", "UNDEAD", 4, 4, 5, "战吼：消灭一个友方亡灵以发现一张亡灵牌。", { battlecry: "MAWCASTER", targeted: "OTHER_UNDEAD" }),
   m("BG32_880", "友善的恶鬼", "UNDEAD", 4, 6, 3, "亡语：在本局对战中，你的酒馆法术使随从额外获得+1攻击力。", { deathrattle: { modifier: "spellAttack", amount: 1 } }),
   m("BG34_690", "疫病行尸", "UNDEAD", 4, 4, 2, "亡语：在本局对战中，你的亡灵拥有+2攻击力。（如果在战斗之外触发，改为+4！）", { deathrattle: { modifier: "undeadAttack", amount: 2, recruitAmount: 4 } }),
@@ -70,18 +77,142 @@ export const DRAGONS = [
   m("BG36_241", "赤红守备巨龙", "DRAGON", 6, 8, 9, "圣盾。进击：施放威猛龙息。", { keywords: ["DIVINE_SHIELD"], rally: "MIGHTY_BREATH" }),
 ];
 
-export const NEUTRALS = [
-  m("BG25_354", "提图斯·瑞文戴尔", "NEUTRAL", 5, 1, 7, "你的亡语额外触发一次。", { scripts: ["DOUBLE_DEATHRATTLES"] }),
-  m("BG26_ICC_901", "达卡莱附魔师", "NEUTRAL", 5, 1, 5, "你的回合结束效果会触发两次。", { scripts: ["DOUBLE_END_TURN"] }),
-  m("BG_LOE_077", "布莱恩·铜须", "NEUTRAL", 5, 2, 4, "你的战吼会触发两次。", { scripts: ["DOUBLE_BATTLECRIES"] }),
+export const MECHS = [
+  m("BG26_146", "催眠机器人", "MECHANICAL", 1, 2, 2, "磁力 在你的回合结束时，获得+1生命值。", {"keywords":["MAGNETIC"],"scripts":["BG26_146"],"endTurn":"BG26_146"}),
+  m("BG29_611", "拔线机", "MECHANICAL", 1, 1, 1, "圣盾。亡语：召唤一个1/1的微型机器人。", {"keywords":["DIVINE_SHIELD"],"scripts":["BG29_611"],"deathrattle":{"script":"BG29_611"}}),
+  m("BG_TTN_401", "星元自动机", "MECHANICAL", 2, 3, 4, "在本局对战中，你每召唤过一个其他星元自动机，便拥有+3/+2。", {"scripts":["BG_TTN_401"]}),
+  m("BG31_177", "机械侏儒解译者", "MECHANICAL", 2, 3, 1, "每当你使用或磁力吸附一个机械时，使其获得+3/+1。", {"scripts":["BG31_177"]}),
+  m("BG32_170", "钢铁猎人", "MECHANICAL", 2, 4, 2, "亡语：获取一张尖利箭矢。", {"scripts":["BG32_170"],"deathrattle":{"script":"BG32_170"}}),
+  m("BGS_071", "偏折机器人", "MECHANICAL", 3, 3, 2, "圣盾 在战斗阶段中，每当你召唤一个机械，便获得+2攻击力和圣盾。", {"keywords":["DIVINE_SHIELD"],"scripts":["BGS_071"]}),
+  m("BG_BOT_911", "吵吵模组", "MECHANICAL", 3, 2, 4, "磁力 圣盾 嘲讽", {"keywords":["DIVINE_SHIELD","MAGNETIC","TAUNT"],"scripts":["BG_BOT_911"]}),
+  m("BG26_147", "手风琴机器人", "MECHANICAL", 3, 3, 3, "磁力。在你的回合开始时，获得1枚铸币。", {"keywords":["MAGNETIC"],"scripts":["BG26_147"]}),
+  m("BG36_854", "救援机器人", "MECHANICAL", 3, 2, 1, "嘲讽。亡语：获取一张维修作业。", {"keywords":["TAUNT"],"scripts":["BG36_854"],"deathrattle":{"script":"BG36_854"}}),
+  m("BG29_503", "废铁残械", "MECHANICAL", 4, 3, 4, "战吼：选择一个友方机械，发现一个机械以对其磁力吸附。", {"scripts":["BG29_503"],"battlecry":"BG29_503","targeted":"MECHANICAL"}),
+  m("BG32_172", "自动装配机", "MECHANICAL", 4, 2, 2, "磁力。亡语：召唤一个星元自动机。", {"keywords":["MAGNETIC"],"scripts":["BG32_172"],"deathrattle":{"script":"BG32_172"}}),
+  m("BG35_341", "附魔哨卫", "MECHANICAL", 4, 3, 5, "磁力。你的酒馆法术使随从额外获得+1/+1。", {"keywords":["MAGNETIC"],"scripts":["BG35_341"]}),
+  m("BG36_506", "复映无人机", "MECHANICAL", 4, 5, 2, "圣盾。发动（1）： 在本回合中，对本随从的下一个磁力吸附翻倍。", {"keywords":["DIVINE_SHIELD"],"scripts":["BG36_506"],"activate":"BG36_506","activateCost":1}),
+  m("BG36_853", "炫彩机器人", "MECHANICAL", 4, 4, 4, "每当你对机械施放法术，对其磁力吸附一个4/4的卫星。", {"scripts":["BG36_853"]}),
+  m("BG36_764", "机鳍鱼人", "MECHANICAL", 4, 6, 5, "在你的回合结束时，获取两张消耗为（1）的酒馆法术牌。", {"tribes":["MECHANICAL","MURLOC"],"scripts":["BG36_764"],"endTurn":"BG36_764"}),
+  m("BG26_148", "报废废铁回收机", "MECHANICAL", 5, 6, 5, "亡语：随机获取一张磁力机械牌。", {"scripts":["BG26_148"],"deathrattle":{"script":"BG26_148"}}),
+  m("BG28_741", "蓄能女沙皇", "MECHANICAL", 5, 4, 1, "圣盾。每当你施放一个酒馆法术时，使你具有圣盾的随从获得+4攻击力。", {"keywords":["DIVINE_SHIELD"],"scripts":["BG28_741"]}),
+  m("BG36_851", "火花破坏机", "MECHANICAL", 5, 5, 5, "每当你使用一张机械牌，对其磁力吸附一个2/2的卫星并提升此效果。", {"scripts":["BG36_851"]}),
+  m("BG26_152", "多面辅助无人机", "MECHANICAL", 6, 4, 6, "在你的回合结束时，你的随从每拥有一个磁力效果，使其获得+4/+4。", {"scripts":["BG26_152"],"endTurn":"BG26_152"}),
+  m("BG35_342", "坠落的飞天魔像", "MECHANICAL", 6, 4, 2, "圣盾。在本局对战中，你每触发过一次亡语，便拥有+4/+2", {"keywords":["DIVINE_SHIELD"],"scripts":["BG35_342"]}),
 ];
 
-export const MINIONS = [...UNDEAD, ...DRAGONS, ...NEUTRALS];
+export const ELEMENTALS = [
+  m("BGS_119", "爆裂飓风", "ELEMENTAL", 1, 2, 1, "圣盾，风怒", {"keywords":["DIVINE_SHIELD","WINDFURY"],"scripts":["BGS_119"]}),
+  m("BGS_127", "熔融岩石", "ELEMENTAL", 1, 3, 3, "在你使用一张元素牌后，获得+1生命值。", {"scripts":["BGS_127"]}),
+  m("BGS_115", "商贩元素", "ELEMENTAL", 2, 3, 3, "当你出售 本随从时，获取一张3/3的元素牌。", {"scripts":["BGS_115"]}),
+  m("BG31_816", "火焰投球手", "ELEMENTAL", 2, 4, 3, "当你出售本随从时，使你的随从获得+1攻击力。提升你此后火焰投球手的效果。", {"scripts":["BG31_816"]}),
+  m("BG31_818", "冰雪投球手", "ELEMENTAL", 2, 3, 4, "当你出售本随从时，使你的随从获得+1生命值。提升你此后冰雪投球手的效果。", {"scripts":["BG31_818"]}),
+  m("BGS_126", "野火元素", "ELEMENTAL", 3, 6, 3, "在本随从攻击并消灭一个随从后，对一个相邻的敌人造成超过目标生命值的伤害。", {"scripts":["BGS_126"]}),
+  m("BG31_843", "裂地陨星", "ELEMENTAL", 3, 4, 4, "在你出售一个元素后，获得+4/+4。", {"scripts":["BG31_843"]}),
+  m("BG32_841", "沙尘旋流", "ELEMENTAL", 3, 3, 2, "战吼：在本局对战中，你的元素使随从额外获得+2攻击力。", {"scripts":["BG32_841"],"battlecry":"BG32_841"}),
+  m("BG34_856", "幼体水波", "ELEMENTAL", 3, 5, 1, "亡语：在本局对战中，在酒馆刷新后，使酒馆中一个随机随从获得+4/+4。", {"scripts":["BG34_856"],"deathrattle":{"script":"BG34_856"}}),
+  m("BGS_116", "刷新畸体", "ELEMENTAL", 4, 4, 5, "战吼：获得2次免费的刷新。", {"scripts":["BGS_116"],"battlecry":"BGS_116"}),
+  m("BGS_123", "酒馆旋风", "ELEMENTAL", 4, 2, 2, "战吼：随机获取一张元素牌。", {"scripts":["BGS_123"],"battlecry":"BGS_123"}),
+  m("BG32_842", "辐光余烬", "ELEMENTAL", 4, 4, 1, "亡语：在本局对战中，你的元素使随从额外获得+2生命值。", {"scripts":["BG32_842"],"deathrattle":{"script":"BG32_842"}}),
+  m("BG34_865", "爆焰灯神", "ELEMENTAL", 4, 5, 5, "战吼：在本局对战中，在酒馆刷新后，使酒馆中一个随机随从获得+10/+10。", {"scripts":["BG34_865"],"battlecry":"BG34_865"}),
+  m("BG34_500", "魔焰执行者", "ELEMENTAL", 4, 4, 5, "在你的回合结束时，吞食酒馆中生命值最高的随从以获得其 属性值。", {"tribes":["ELEMENTAL","DEMON"],"scripts":["BG34_500"],"endTurn":"BG34_500"}),
+  m("BG36_180", "活体监牢", "ELEMENTAL", 4, 4, 5, "发动（1）：获得你在本回合中购买的下一个随从的属性值。", {"scripts":["BG36_180"],"activate":"BG36_180","activateCost":1}),
+  m("BG36_181", "空气投球手", "ELEMENTAL", 4, 6, 6, "当你出售本随从时，使你的随从获得+2/+2。提升你此后投球手的效果。", {"scripts":["BG36_181"]}),
+  m("BG26_162", "农场热舞旋风", "ELEMENTAL", 5, 4, 4, "战吼，亡语：使酒馆中的元素在本局对战中获得+8/+8。", {"scripts":["BG26_162"],"battlecry":"BG26_162","deathrattle":{"script":"BG26_162"}}),
+  m("BG34_858", "空气亡魂", "ELEMENTAL", 5, 3, 6, "在你花掉7枚铸币后，施放乘借东风。", {"scripts":["BG34_858"]}),
+  m("BGS_121", "温和的灯神", "ELEMENTAL", 6, 5, 6, "嘲讽 战吼，亡语：随机获取一张元素牌。", {"keywords":["TAUNT"],"scripts":["BGS_121"],"battlecry":"BGS_121","deathrattle":{"script":"BGS_121"}}),
+  m("BG26_175", "惊喜元素", "ELEMENTAL", 6, 8, 8, "圣盾。可以与任意元素三连。", {"keywords":["DIVINE_SHIELD"],"scripts":["BG26_175"]}),
+  m("BG32_846", "狂放的法力涌流", "ELEMENTAL", 6, 6, 5, "在你使用一张元素牌后，使你的元素获得+4/+4。", {"scripts":["BG32_846"]}),
+  m("BG36_351", "沟渠守护元素", "ELEMENTAL", 6, 5, 10, "进击：在本局对战中，你的元素使随从额外获得+2/+2。", {"scripts":["BG36_351"],"rally":"BG36_351"}),
+  m("BG36_352", "无羁雷暴", "ELEMENTAL", 6, 3, 12, "在你使用3张元素牌后，获得酒馆中生命值最高的随从的属性值。", {"scripts":["BG36_352"]}),
+];
+
+export const QUILBOAR = [
+  m("BG20_100", "剃刀沼泽地卜师", "QUILBOAR", 1, 2, 1, "战吼：获取2张 鲜血宝石。", {"scripts":["BG20_100"],"battlecry":"BG20_100"}),
+  m("BG33_886", "獠牙露营者", "QUILBOAR", 1, 2, 3, "进击：本随从对自身使用一张鲜血宝石。", {"scripts":["BG33_886"],"rally":"BG33_886"}),
+  m("BG20_101", "路霸野猪人", "QUILBOAR", 2, 2, 4, "进击：获取一张 鲜血宝石。", {"scripts":["BG20_101"],"rally":"BG20_101"}),
+  m("BG31_320", "坑谷矿工", "QUILBOAR", 2, 2, 2, "抉择：获取2张鲜血宝石；或者获取一张宝石特训。", {"scripts":["BG31_320"],"chooseOne":"BG31_320"}),
+  m("BG33_430", "惊异长牙猪", "QUILBOAR", 2, 1, 3, "每当另一个友方随从攻击，本随从对其使用一张鲜血宝石。", {"scripts":["BG33_430"]}),
+  m("BG31_326", "健身搏猪", "QUILBOAR", 3, 4, 4, "在你的回合结束时，获取一张宝石特训。", {"scripts":["BG31_326"],"endTurn":"BG31_326"}),
+  m("BG34_683", "棘背鼓手", "QUILBOAR", 3, 5, 3, "战吼：获取一张鲜血宝石弹幕。", {"scripts":["BG34_683"],"battlecry":"BG34_683"}),
+  m("BG34_684", "堑壕斗士", "QUILBOAR", 3, 3, 3, "在你的回合结束时，获取一张查抄宝石。", {"scripts":["BG34_684"],"endTurn":"BG34_684"}),
+  m("BG36_330", "狡猾的渗透者", "QUILBOAR", 3, 4, 5, "抉择：获得2次免费的刷新；或者获取3张鲜血宝石。", {"scripts":["BG36_330"],"chooseOne":"BG36_330"}),
+  m("BG20_104", "狂棍野猪人", "QUILBOAR", 4, 2, 7, "风怒。进击：本随从对你的所有其他随从各使用一张鲜血宝石。", {"keywords":["WINDFURY"],"scripts":["BG20_104"],"rally":"BG20_104"}),
+  m("BG30_123", "无畏的食客", "QUILBOAR", 4, 2, 4, "抉择：在本局对战中，你的鲜血宝石使随从额外获得+1/+1；或者获取4张鲜血宝石。", {"scripts":["BG30_123"],"chooseOne":"BG30_123"}),
+  m("BG31_327", "刺棘开拓者", "QUILBOAR", 4, 4, 5, "每回合中有一张抉择牌可以同时拥有两种效果。", {"scripts":["BG31_327"]}),
+  m("BG34_682", "剃刀沼泽舞扇者", "QUILBOAR", 4, 6, 2, "亡语：获取一张鲜血宝石弹幕。", {"scripts":["BG34_682"],"deathrattle":{"script":"BG34_682"}}),
+  m("BG36_331", "棘刺挖掘工", "QUILBOAR", 4, 3, 6, "进击：随机获取一张抉择牌。", {"scripts":["BG36_331"],"rally":"BG36_331"}),
+  m("BG36_332", "圈套陷阱师", "QUILBOAR", 4, 4, 4, "抉择：随机获取一张野猪人牌；或者使你的铸币上限提高1枚。", {"scripts":["BG36_332"],"chooseOne":"BG36_332"}),
+  m("BG28_633", "邪能野猪人", "QUILBOAR", 5, 2, 6, "在你施放3个法术后，吞食酒馆中的一个随从，获得其属性值。", {"tribes":["DEMON","QUILBOAR"],"scripts":["BG28_633"]}),
+  m("BG33_883", "剃刀沼泽织藤者", "QUILBOAR", 5, 5, 5, "进击：本随从对自身使用3张永久的鲜血宝石。", {"scripts":["BG33_883"],"rally":"BG33_883"}),
+  m("BG33_885", "鲜血精研者", "QUILBOAR", 5, 2, 8, "进击：在本局对战中，你的鲜血宝石使随从额外获得+1/+1。", {"scripts":["BG33_885"],"rally":"BG33_885"}),
+  m("BG36_510", "警戒的刺鬃野猪人", "QUILBOAR", 5, 3, 5, "每当你对本随从施放一个法术，本随从对相邻的随从各使用一张鲜血宝石。", {"scripts":["BG36_510"]}),
+  m("BG23_017", "鲜血勇士", "QUILBOAR", 6, 9, 3, "战吼，亡语：在本局对战中，你的鲜血宝石使随从额外获得+1/+1。", {"scripts":["BG23_017"],"battlecry":"BG23_017","deathrattle":{"script":"BG23_017"}}),
+  m("BG31_323", "极速野猪骑士", "QUILBOAR", 6, 5, 7, "在你使用一张抉择牌后，本随从对你的所有其他野猪人各使用一张鲜血宝石。", {"scripts":["BG31_323"]}),
+  m("BG36_341", "老牌恶匪", "QUILBOAR", 6, 8, 8, "抉择：本随从对你的所有随从各使用3张鲜血宝石；或者施放3次鲜血宝石弹幕。", {"scripts":["BG36_341"],"chooseOne":"BG36_341"}),
+];
+
+export const BEASTS = [
+  m("BG31_803", "嗡鸣害虫", "BEAST", 1, 1, 1, "嘲讽。亡语：召唤一只2/2的甲虫。", {"keywords":["TAUNT"],"scripts":["BG31_803"],"deathrattle":{"script":"BG31_803"}}),
+  m("BG36_200", "翩飞蝙蝠", "BEAST", 1, 1, 4, "进击：召唤一只1/1的野兽。", {"scripts":["BG36_200"],"rally":"BG36_200"}),
+  m("BG26_805", "哼鸣蜂鸟", "BEAST", 2, 1, 4, "战斗开始时：在本场战斗的剩余时间内，你的野兽拥有+1攻击力。", {"scripts":["BG26_805"],"combatStart":"BG26_805"}),
+  m("BG31_801", "森林游虫", "BEAST", 2, 1, 1, "战吼：在本局对战中，你的甲虫拥有+2/+1。 亡语：召唤一只2/2的甲虫。", {"scripts":["BG31_801"],"battlecry":"BG31_801","deathrattle":{"script":"BG31_801"}}),
+  m("BG36_201", "深潜狮子鱼", "BEAST", 2, 3, 4, "发动（2）：选择酒馆中的一张牌，将其替换为鱼饵并使你最左边的野兽攻击该鱼饵。", {"scripts":["BG36_201"],"activate":"BG36_201","activateCost":2}),
+  m("BG25_806", "狡猾的迅猛龙", "BEAST", 3, 1, 3, "亡语：随机召唤一只野兽，其属性值变为6/6。", {"scripts":["BG25_806"],"deathrattle":{"script":"BG25_806"}}),
+  m("BG27_084", "机变甲虫", "BEAST", 3, 3, 1, "抉择：使一只野兽获得+1/+1和复生；或者+4攻击力和风怒。", {"scripts":["BG27_084"],"chooseOne":"BG27_084","targeted":"BEAST"}),
+  m("BG36_202", "美味龙虾", "BEAST", 3, 1, 1, "亡语：随机使一只友方野兽获得+1/+1。提升你此后美味龙虾的 效果。", {"scripts":["BG36_202"],"deathrattle":{"script":"BG36_202"}}),
+  m("BG36_207", "狼宝宝", "BEAST", 3, 3, 6, "进击：使你的其他随从获得+4/+1。", {"scripts":["BG36_207"],"rally":"BG36_207"}),
+  m("BG36_763", "财宝鹦鹉", "BEAST", 3, 5, 5, "一旦本随从造成35点伤害，获取一张点金之触。", {"tribes":["BEAST","PIRATE"],"scripts":["BG36_763"]}),
+  m("BG26_802", "香蕉猛猿", "BEAST", 4, 3, 6, "在战斗中，在你召唤一只野兽后，使其攻击力翻倍。", {"scripts":["BG26_802"]}),
+  m("BG36_204", "猎头狮鹫", "BEAST", 4, 3, 5, "进击：随机获取一张野兽牌。", {"scripts":["BG36_204"],"rally":"BG36_204"}),
+  m("BG36_206", "尖利的鲨鱼", "BEAST", 4, 4, 5, "当你出售本随从时，刷新酒馆且其中有一个鱼饵，并使你最左边的野兽攻击该鱼饵。", {"scripts":["BG36_206"]}),
+  m("BG36_211", "啮笼鼠", "BEAST", 4, 2, 7, "每当一只友方野兽攻击，使你的野兽获得+2/+1。", {"scripts":["BG36_211"]}),
+  m("BG31_809", "绿松石飞掠虫", "BEAST", 5, 5, 5, "亡语：在本局 对战中，你的甲虫拥有+5/+5。召唤一只2/2的甲虫。", {"scripts":["BG31_809"],"deathrattle":{"script":"BG31_809"}}),
+  m("BG35_602", "深潜巨兽", "BEAST", 5, 3, 8, "每当你召唤野兽时，使其获得+2攻击力并永久提升此效果。", {"scripts":["BG35_602"]}),
+  m("BG35_604", "下水道老鼠头目", "BEAST", 5, 4, 6, "亡语：召唤两只下水道老鼠。下水道老鼠能召唤2/3并具有嘲讽的乌龟。", {"scripts":["BG35_604"],"deathrattle":{"script":"BG35_604"}}),
+  m("BG36_210", "囤食土狼", "BEAST", 5, 5, 6, "进击：召唤一只美味龙虾。", {"scripts":["BG36_210"],"rally":"BG36_210"}),
+  m("BGS_018", "巨狼戈德林", "BEAST", 6, 8, 8, "亡语：直到下个回合，你的野兽拥有+8/+8。", {"scripts":["BGS_018"],"deathrattle":{"script":"BGS_018"}}),
+  m("BG36_208", "逐亡陆行鸟", "BEAST", 6, 10, 11, "在一个友方进击随从攻击后，触发你最左边的亡语。", {"scripts":["BG36_208"]}),
+  m("BG36_209", "暴虐巨蝎", "BEAST", 6, 6, 7, "在一个友方随从攻击后，在本局对战中，你的甲虫拥有+5/+5。亡语：召唤一只2/2的甲虫。", {"scripts":["BG36_209"],"deathrattle":{"script":"BG36_209"}}),
+];
+
+export const NEUTRALS = [
+  m("BG36_345", "可疑的监狱守卫", "NEUTRAL", 1, 3, 3, "发动（1）：使另一个随从获得+3/+3。", {"scripts":["BG36_345"],"activate":"BG36_345","activateCost":1,"targeted":"OTHER_MINION"}),
+  m("BG24_715", "耐心的侦查员", "NEUTRAL", 2, 1, 1, "当你出售本随从时，发现一个等级1的随从。", {"scripts":["BG24_715"],"endTurn":"BG24_715"}),
+  m("BG27_002", "软泥角斗士", "NEUTRAL", 2, 2, 2, "战吼：获取两张可以使随从获得+1/+1和嘲讽的黏黏盾。", {"scripts":["BG27_002"],"battlecry":"BG27_002"}),
+  m("BG32_237", "新锐植物学家", "NEUTRAL", 2, 3, 4, "抉择：在本局对战中，你的酒馆法术使随从额外获得+1攻击力；或者+1生命值。", {"scripts":["BG32_237"],"chooseOne":"BG32_237"}),
+  m("BG36_354", "迷诱咒术师", "NEUTRAL", 2, 3, 4, "发动（2）：偷取酒馆中攻击力最高的 随从牌。", {"scripts":["BG36_354"],"activate":"BG36_354","activateCost":2}),
+  m("BGS_131", "致命的孢子", "NEUTRAL", 3, 1, 1, "烈毒", {"keywords":["VENOMOUS"],"scripts":["BGS_131"]}),
+  m("BG28_303", "变装盗墓贼", "NEUTRAL", 3, 4, 4, "战吼：消灭一个友方亡灵以获取一张它的原始版复制。", {"scripts":["BG28_303"],"battlecry":"BG28_303","targeted":"OTHER_UNDEAD"}),
+  m("BG36_346", "水果商贩", "NEUTRAL", 3, 3, 6, "发动（1）：获取2张香蕉果盘。", {"scripts":["BG36_346"],"activate":"BG36_346","activateCost":1}),
+  m("BG24_018", "蓝壳始祖龟", "NEUTRAL", 4, 3, 6, "如果你输掉了上一场战斗，出售本随从可以获得5枚铸币。", {"scripts":["BG24_018"]}),
+  m("BG25_016", "辛多雷直射手", "NEUTRAL", 4, 3, 4, "风怒，圣盾。进击：移除目标的复生和嘲讽。", {"keywords":["DIVINE_SHIELD","WINDFURY"],"scripts":["BG25_016"],"rally":"BG25_016"}),
+  m("BG32_341", "胡蒙格斯", "NEUTRAL", 4, 5, 5, "圣盾。你的酒馆法术使随从额外获得+1/+2。", {"keywords":["DIVINE_SHIELD"],"scripts":["BG32_341"]}),
+  m("BG34_604", "英勇的逆袭者", "NEUTRAL", 4, 1, 10, "潜行。进击：获得目标的攻击力。", {"keywords":["STEALTH"],"scripts":["BG34_604"],"rally":"BG34_604"}),
+  m("BG36_620", "砰砰箱", "NEUTRAL", 4, 5, 10, "嘲讽。战斗开始时：对所有其他随从造成3点伤害。", {"keywords":["TAUNT"],"scripts":["BG36_620"],"combatStart":"BG36_620"}),
+  m("BGS_012", "坎格尔的学徒", "NEUTRAL", 5, 3, 6, "亡语：召唤你本场战斗中最先死亡的2个机械的原始版复制。", {"scripts":["BGS_012"],"deathrattle":{"script":"BGS_012"}}),
+  m("BGS_104", "“厨房煞星”诺米", "NEUTRAL", 5, 6, 6, "在你使用一张元素牌后，使酒馆中的元素在本局对战中获得+4/+4。", {"scripts":["BGS_104"]}),
+  m("BG23_318", "莽神火车王", "NEUTRAL", 5, 6, 2, "亡语：消灭击杀本随从的随从。", {"scripts":["BG23_318"],"deathrattle":{"script":"BG23_318"}}),
+  m("BG_LOE_077", "布莱恩·铜须", "NEUTRAL", 5, 2, 4, "你的战吼会触发 两次。", {"scripts":["BG_LOE_077"]}),
+  m("BG25_354", "提图斯·瑞文戴尔", "NEUTRAL", 5, 1, 7, "你的亡语额外触发一次。", {"scripts":["BG25_354"]}),
+  m("BG26_ICC_901", "达卡莱附魔师", "NEUTRAL", 5, 1, 5, "你的回合结束效果会触发两次。", {"scripts":["BG26_ICC_901"]}),
+  m("BG28_550", "竞技表演者", "NEUTRAL", 5, 3, 4, "战吼：发现一张酒馆法术牌。", {"scripts":["BG28_550"],"battlecry":"BG28_550"}),
+  m("BG35_123", "灾变先锋", "NEUTRAL", 5, 6, 10, "在你的回合结束时，获取你施放的上一个酒馆法术的一张复制。", {"scripts":["BG35_123"],"endTurn":"BG35_123"}),
+  m("BG35_883", "巴琳达·斯通赫尔斯", "NEUTRAL", 6, 6, 6, "你的以友方随从为目标的法术会施放 两次。", {"scripts":["BG35_883"]}),
+  m("BG36_356", "泰瑞尔", "NEUTRAL", 6, 10, 10, "发动（2）：将另一个随从的属性值变为50/50。", {"scripts":["BG36_356"],"activate":"BG36_356","activateCost":2,"targeted":"OTHER_MINION"}),
+];
+
+export const MINIONS = [...UNDEAD, ...DRAGONS, ...MECHS, ...ELEMENTALS, ...QUILBOAR, ...BEASTS, ...NEUTRALS];
 
 export const TOKENS = {
   skeleton: m("BG_ICC_026t", "骷髅", "UNDEAD", 1, 1, 1, "", { token: true }),
   forgotten_hand: m("BG25_010t", "援手", "UNDEAD", 1, 2, 1, "复生", { token: true, keywords: ["REBORN"] }),
   eternal_knight: m("BG25_008", "永恒骑士", "UNDEAD", 2, 4, 2, "", { token: true, scripts: ["ETERNAL_KNIGHT"] }),
+  microbot: m("BG_BOT_312t", "微型机器人", "MECHANICAL", 1, 1, 1, "", { token: true }),
+  beetle: m("BG28_603t", "甲虫", "BEAST", 1, 2, 2, "", { token: true, scripts: ["BEETLE"] }),
+  small_beast: m("BG36_200t", "幼小野兽", "BEAST", 1, 1, 1, "", { token: true, imageUrl: art("BG36_200") }),
+  sewer_rat: m("BG19_010", "下水道老鼠", "BEAST", 2, 3, 2, "亡语：召唤一只2/3并具有嘲讽的半甲龟。", { token: true, deathrattle: { summon: "turtle", count: 1 } }),
+  turtle: m("BG19_010t", "半甲龟", "BEAST", 1, 2, 3, "嘲讽", { token: true, keywords: ["TAUNT"] }),
+  sell_elemental: m("BGS_115t", "水滴元素", "ELEMENTAL", 1, 3, 3, "", { token: true, imageUrl: art("BGS_115") }),
 };
 
 export const CHROMATICS = [
@@ -93,22 +224,73 @@ export const CHROMATICS = [
 ];
 
 export const SPELLS = [
-  s("BG28_168", "闪亮的戒指", 3, "使你的随从获得+1/+1。", "RING"),
-  s("BG28_604", "宰割", 5, "消灭一个友方亡灵。在本局对战中，你的亡灵拥有+5攻击力。", "SLAUGHTER", { targeted: "UNDEAD" }),
-  s("BG28_503", "强固", 1, "使一个随从获得+3生命值和嘲讽。", "FORTIFY", { targeted: "ANY_MINION" }),
-  s("BG28_810", "酒馆币", 1, "获得1枚铸币。", "COIN"),
-  s("BG28_897", "香蕉果盘", 1, "使一个随从获得+2/+2。", "BANANA", { targeted: "ANY_MINION" }),
-  s("BG28_827", "快速浏览", 2, "获得2次免费的刷新。", "FREE_REFRESH"),
-  s("BG36_246", "威猛龙息", 4, "使你的随从获得+2/+1。对你的龙重复一次。对具有圣盾的随从重复一次。", "MIGHTY_BREATH"),
+  s("BG20_GEM", "鲜血宝石", 1, 0, "使一个随从获得+1/+1。", "BLOOD_GEM", { targeted: "ANY_MINION", pool: false }),
+  s("BG31_893", "宝石特训", 2, 0, "抉择：在本局对战中，你的鲜血宝石额外获得+1攻击力；或者+1生命值。", "GEM_TRAINING", { pool: false }),
+  s("BG34_689", "鲜血宝石弹幕", 3, 1, "在本局对战中，每次刷新酒馆后，使其中一个随机随从获得一颗鲜血宝石。", "GEM_BARRAGE"),
+  s("BG28_698", "查抄宝石", 4, 1, "对一个随从使用2张鲜血宝石，并使其偷取相邻随从的鲜血宝石。", "GEM_CONFISCATION", { targeted: "ANY_MINION" }),
+  s("BG27_002t", "黏黏盾", 1, 0, "使一个随从获得+1/+1和嘲讽。", "STICKY_SHIELD", { targeted: "ANY_MINION", pool: false, imageUrl: art("BG27_002") }),
+  s("BG28_503", "强固", 1, 1, "使一个随从获得+3生命值和嘲讽。", "FORTIFY", { targeted: "ANY_MINION" }),
+  s("BG28_504", "招募新人", 1, 2, "随机获取一张等级1的随从牌。", "RECRUIT_ROOKIE"),
+  s("BG28_512", "附魔链索", 1, 2, "随机偷取酒馆中的一个随从。", "ENCHANTED_LASSO"),
+  s("BG28_810", "酒馆币", 1, 1, "获得1枚铸币。", "COIN"),
+  s("BG28_897", "香蕉果盘", 1, 1, "使一个随从获得+2/+2。", "BANANA", { targeted: "ANY_MINION" }),
+  s("BG28_966", "意外之果", 1, 1, "使酒馆中的随从获得+1/+2。", "UNEXPECTED_FRUIT"),
+  s("BG31_880", "联盟旗帜", 1, 1, "抉择：使一个随从获得+3/+1；或者+1/+3。", "ALLIANCE_FLAG", { targeted: "ANY_MINION" }),
+  s("BG33_101", "新生幼苗", 1, 3, "发现一个等级1的随从。", "DISCOVER_TIER_ONE"),
+
+  s("BG28_518", "主厨甄选", 2, 2, "选择一个随从。获取相同类型的另一张随从牌。", "CHEFS_CHOICE", { targeted: "ANY_MINION" }),
+  s("BG28_571", "拼命发掘", 2, 3, "获得1枚铸币。购买本牌会消耗生命值，而非铸币。", "DESPERATE_DIG", { healthCost: true }),
+  s("BG28_805", "钻探原油", 2, 3, "你的铸币上限提高1枚。", "STRIKE_OIL"),
+  s("BG28_827", "快速浏览", 2, 1, "获得2次免费的刷新。", "FREE_REFRESH"),
+  s("BG34_330", "搜寻时光", 2, 2, "发现一张你当前等级的随从牌，将其锁入你的手牌1个回合。", "SEARCH_TIME"),
+  s("BG35_951", "暴风城之力", 2, 2, "随机使四个友方随从获得+1/+2。", "STORMWIND_STRENGTH"),
+  s("BG36_883", "赢家的面包", 2, 2, "使一个随从获得+2/+3。如果你赢得了下一场战斗，下回合再使其获得+4/+6。", "WINNERS_BREAD", { targeted: "ANY_MINION" }),
+
+  s("BG28_168", "闪亮的戒指", 3, 2, "使你的随从获得+1/+1。", "RING"),
+  s("BG28_520", "搞怪裤", 3, 1, "使一个随从获得+1/+2和嘲讽。如果它已经拥有嘲讽，则移除。", "WACKY_TROUSERS", { targeted: "ANY_MINION" }),
+  s("BG28_521", "位面望远镜", 3, 4, "发现一个你的多数随从的类型的随从。", "PLANAR_TELESCOPE"),
+  s("BG28_800", "慎重投资", 3, 1, "下回合获得2枚铸币。", "CAREFUL_INVESTMENT"),
+  s("BG28_884", "自负", 3, 1, "如果下一场战斗获胜，获得3枚铸币；平局则获得1枚。", "OVERCONFIDENCE"),
+  s("BG28_886", "富足之杖", 3, 2, "使酒馆中的随从在本局对战中获得+2/+2。", "STAFF_OF_ENRICHMENT"),
+  s("BG30_804", "稳健异变", 3, 1, "选择一个随从，随机将其变形成为高一级的随从并保留其属性值。", "STABLE_MUTATION", { targeted: "ANY_MINION" }),
+  s("BG31_881", "时间管理", 3, 4, "抉择：使你的随从获得+2/+2；或者下回合开始时触发两次。", "TIME_MANAGEMENT"),
+  s("BG36_624", "维修作业", 3, 2, "使一个随从获得+4/+8。", "REPAIR_JOB", { targeted: "ANY_MINION" }),
+
+  s("BG28_825", "防御者的仪式", 4, 2, "使一个随从获得+7/+7和嘲讽。", "RITUAL_OF_DEFENDER", { targeted: "ANY_MINION" }),
+  s("BG28_845", "自然祝福", 4, 4, "选择一个随从，使所有该类型的随从获得+3/+3。", "BLESSING_OF_NATURE", { targeted: "ANY_MINION" }),
+  s("BG28_888", "乱放的茶具", 4, 3, "使每个类型的各一个友方随从获得+4/+4。", "MISPLACED_TEAPOT"),
+  s("BG31_890", "无限潜力", 4, 3, "抉择：发现一张当前等级的随从牌；或者酒馆法术牌。", "UNLIMITED_POTENTIAL"),
+  s("BG34_888", "惊扰墓穴", 4, 2, "发现一张亡灵牌。如果本回合使用，所选随从会死亡。", "DISTURB_GRAVES"),
+  s("BG35_912", "艾欧娜尔的眷顾", 4, 2, "选择一个随从。在本局对战中，使酒馆中该类型的随从获得+3/+3。", "EONARS_FAVOR", { targeted: "ANY_MINION" }),
+  s("BG36_246", "威猛龙息", 4, 2, "使你的随从获得+2/+1。对你的龙重复一次。对具有圣盾的随从重复一次。", "MIGHTY_BREATH"),
+  s("BG36_884", "武器锻造", 4, 2, "获取3张尖利箭矢。", "WEAPONS_FORGE"),
+
+  s("BG28_500", "护甲储备", 5, 3, "将你的护甲值变为5点。", "ARMOR_STASH"),
+  s("BG28_573", "优势压制", 5, 3, "战斗开始时：随机将一个敌方随从的生命值变为1。", "UPPER_HAND"),
+  s("BG28_604", "宰割", 5, 2, "消灭一个友方亡灵。在本局对战中，你的亡灵拥有+5攻击力。", "SLAUGHTER", { targeted: "UNDEAD" }),
+  s("BG28_830", "点金之触", 5, 5, "随机使酒馆中的一个随从变为金色。", "GOLDEN_TOUCH"),
+  s("BG28_849", "顶尖好酒", 5, 2, "刷新酒馆，使其中变为酒馆法术牌。", "TOP_SHELF"),
+  s("BG28_882", "预订遗体", 5, 3, "发现一张亡语随从牌。", "DISCOVER_DEATHRATTLE"),
+  s("BG28_GIL_836", "猎头招聘", 5, 3, "发现一张战吼随从牌。", "DISCOVER_BATTLECRY"),
+  s("BG31_886", "森林秘宝", 5, 2, "抉择：使一个随从获得+6/+6，触发两次；或者使你的随从获得+2/+2。", "FOREST_TREASURE", { targeted: "ANY_MINION" }),
+  s("BG34_889", "诺兹多姆的子嗣", 5, 2, "战斗开始时：使你最左边的随从的攻击力翻倍。", "CHILD_OF_NOZDORMU"),
+  s("EBG_Spell_032", "祈请吞噬者", 5, 4, "出售一个友方随从，使一个随机友方随从获得其属性值。", "DEVOURERS_INVOCATION", { targeted: "DEVOURABLE" }),
+
+  s("BG28_169", "艾泽里特强化", 6, 4, "使你的随从获得+2/+2，触发两次。", "AZERITE_EMPOWERMENT"),
+  s("BG28_838", "完美形象", 6, 2, "将一个随从的属性值变为20/20。", "PERFECT_VISION", { targeted: "ANY_MINION" }),
+  s("EBG_Spell_017", "大地母亲之眼", 6, 4, "选择一个等级4或以下的友方随从，将其变为金色。", "EYES_OF_EARTH_MOTHER", { targeted: "TIER_FOUR_OR_LESS" }),
+  s("EBG_Spell_038", "哈缪尔遗失的法杖", 6, 2, "选择一个随从。刷新酒馆，使其中的牌变为该类型的随从。", "HAMUULS_STAFF", { targeted: "ANY_MINION" }),
+
+  s("EBG_Spell_014", "尖利箭矢", 1, 1, "使一个随从获得+4攻击力。", "SHARP_ARROW", { targeted: "ANY_MINION", pool: false }),
 ];
 
 export const BOT_PROFILES = [
   { id: "lichking", name: "巫妖王", hero: "复生仪式", archetype: "UNDEAD", accent: "#9bd6e5" },
   { id: "ysera", name: "伊瑟拉", hero: "梦境之门", archetype: "DRAGON", accent: "#8ddb73" },
-  { id: "sindragosa", name: "辛达苟萨", hero: "冰冷静滞", archetype: "DRAGON", accent: "#73d7ff" },
-  { id: "denathrius", name: "德纳修斯大帝", hero: "华丽盛宴", archetype: "UNDEAD", accent: "#ef7b7b" },
-  { id: "toki", name: "永恒者托奇", hero: "时空酒馆", archetype: "MIXED", accent: "#ffd166" },
-  { id: "reno", name: "雷诺·杰克逊", hero: "要发财了！", archetype: "MIXED", accent: "#c3a6ff" },
+  { id: "sindragosa", name: "辛达苟萨", hero: "冰冷静滞", archetype: "ELEMENTAL", accent: "#73d7ff" },
+  { id: "denathrius", name: "德纳修斯大帝", hero: "华丽盛宴", archetype: "QUILBOAR", accent: "#ef7b7b" },
+  { id: "toki", name: "永恒者托奇", hero: "时空酒馆", archetype: "MECHANICAL", accent: "#ffd166" },
+  { id: "reno", name: "雷诺·杰克逊", hero: "要发财了！", archetype: "BEAST", accent: "#c3a6ff" },
   { id: "illidan", name: "伊利丹·怒风", hero: "左膀右臂", archetype: "MIXED", accent: "#ff9f66" },
 ];
 

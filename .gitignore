@@ -3,4 +3,5 @@ node_modules/
 .wrangler/
 coverage/
 dist/
+data/
 *.log

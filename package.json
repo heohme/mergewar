@@ -4,8 +4,15 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "dev": "python3 -m http.server 4173 --bind 127.0.0.1",
-    "test": "node test/engine.test.mjs",
+    "db:migrate:local": "wrangler d1 migrations apply mergewar-playtests --local",
+    "db:migrate:remote": "wrangler d1 migrations apply mergewar-playtests --remote",
+    "dev": "npm run db:migrate:local && npm run build && wrangler pages dev dist --port 4173",
+    "dev:node": "node scripts/server.mjs",
+    "deploy": "npm run build && wrangler pages deploy dist --project-name=mergewar",
+    "test": "node test/engine.test.mjs && node test/presentation.test.mjs && node test/server.test.mjs",
     "simulate": "node scripts/simulate.mjs 300"
+  },
+  "devDependencies": {
+    "wrangler": "4.86.0"
   }
 }
