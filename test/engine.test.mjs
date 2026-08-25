@@ -47,6 +47,16 @@ assert.ok(game.battle.frames.length >= 1, "战斗应生成独立页面可播放�
 assert.ok(game.battle.frames.some((frame) => frame.event?.type === "attack" && frame.event.attackerId && frame.event.targetId), "战斗帧应标记攻击者、目标和伤害");
 assert.ok(game.battle.insights.length >= 1, "战斗结束应生成关键原因摘要");
 
+const lethalPlaybackGame = createGame(HEROES[0].id, fixed);
+lethalPlaybackGame.player.health = 3;
+lethalPlaybackGame.player.board = [createMinion({ id: "lethal-player", name: "弱小随从", tribe: "NEUTRAL", tribes: ["NEUTRAL"], tier: 1, attack: 0, health: 1, keywords: [] })];
+lethalPlaybackGame.currentOpponent.board = [createMinion({ id: "lethal-enemy", name: "致命随从", tribe: "NEUTRAL", tribes: ["NEUTRAL"], tier: 6, attack: 30, health: 30, keywords: [] })];
+const lethalRankBefore = playerRank(lethalPlaybackGame);
+assert.ok(beginCombat(lethalPlaybackGame, fixed));
+assert.equal(lethalPlaybackGame.player.health, 0, "引擎可以预先计算致命战斗结果");
+assert.equal(lethalPlaybackGame.battle.playerHealthBefore, 3, "战斗记录应保留开战前生命供动画展示");
+assert.equal(lethalPlaybackGame.battle.playerRankBefore, lethalRankBefore, "战斗记录应保留开战前排名，避免动画提前泄露结果");
+
 const finalRankingGame = createGame(HEROES[0].id, fixed);
 finalRankingGame.round = finalRankingGame.maxRounds;
 finalRankingGame.player.health = 8; finalRankingGame.player.alive = true; finalRankingGame.player.lastBattleResult = "WIN";

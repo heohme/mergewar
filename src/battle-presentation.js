@@ -13,6 +13,16 @@ export function battleFrameDelay(frame, speed = 1, reducedMotion = false) {
   return Math.max(reducedMotion ? 140 : 220, Math.round(accessibleDelay / Math.max(1, speed)));
 }
 
+export function battleHeaderState(battle, player, currentRank, finished = false) {
+  if (finished) return { health: player.health, armor: player.armor || 0, rank: currentRank };
+  const legacyHealth = (player.health || 0) + (battle?.winner === "enemy" ? battle?.damage || 0 : 0);
+  return {
+    health: battle?.playerHealthBefore ?? legacyHealth,
+    armor: battle?.playerArmorBefore ?? (player.armor || 0),
+    rank: battle?.playerRankBefore ?? currentRank,
+  };
+}
+
 export function newCombatantIds(frame, previousFrame, side) {
   if (!previousFrame || !["resolve", "reborn"].includes(frame?.event?.type)) return new Set();
   const previousIds = new Set((previousFrame[side] || []).map((item) => item.instanceId));

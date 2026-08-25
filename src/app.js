@@ -4,12 +4,12 @@ import {
   castSpell, chooseDiscover, createGame, gameResult, moveMinion, playCard, playerRank,
   reconcileBotUpgradeScaling, reconcileCardDefinitions, refreshShop, reorderMinion, resolvePendingTarget, resolveTriples, sellMinion, standings, toggleFreeze,
   startHeroPower, upgradeTavern,
-} from "./engine.js?v=31";
-import { attackVectorGeometry, battleFrameDelay, combatKeywordState, newCombatantIds } from "./battle-presentation.js?v=31";
+} from "./engine.js?v=32";
+import { attackVectorGeometry, battleFrameDelay, battleHeaderState, combatKeywordState, newCombatantIds } from "./battle-presentation.js?v=32";
 
 const app = document.querySelector("#app");
 const SAVE_KEY = "mergewar-save-v3";
-const CLIENT_VERSION = "prototype-v31";
+const CLIENT_VERSION = "prototype-v32";
 const MAX_BEHAVIOR_EVENTS = 300;
 let game = loadGame();
 let selectedBoardId = null;
@@ -204,12 +204,15 @@ function combatButtonLabel() {
   return "进入战斗 →";
 }
 
-function renderTopbar() {
+function renderTopbar(displayState = {}) {
   const shopPhase = game.phase === "SHOP";
+  const displayHealth = displayState.health ?? game.player.health;
+  const displayArmor = displayState.armor ?? game.player.armor;
+  const displayRank = displayState.rank ?? playerRank(game);
   return `<header class="topbar">
     <div class="round"><span>回合</span><b>${game.round}</b><i>/${game.maxRounds}</i></div>
     <div class="hero-cluster"><div class="hero"><img src="${game.hero.imageUrl}" alt=""><div><b>${game.hero.name}</b><small>${game.hero.tag}</small></div></div>${heroPowerControl()}</div>
-    <div class="resources"><span class="hp">♥ ${game.player.health}</span>${game.player.armor ? `<span class="armor">◆ ${game.player.armor}</span>` : ""}<span class="coin" title="当前铸币 / 本回合铸币额度">● ${game.player.gold}/${game.player.turnGoldCap || Math.max(game.player.gold, Math.min(game.player.goldCap || 10, game.round + 2))}</span><span># ${playerRank(game)}</span></div>
+    <div class="resources"><span class="hp">♥ ${displayHealth}</span>${displayArmor ? `<span class="armor">◆ ${displayArmor}</span>` : ""}<span class="coin" title="当前铸币 / 本回合铸币额度">● ${game.player.gold}/${game.player.turnGoldCap || Math.max(game.player.gold, Math.min(game.player.goldCap || 10, game.round + 2))}</span><span># ${displayRank}</span></div>
     ${shopPhase ? `<button class="combat-button topbar-combat" data-action="combat" ${canEndTurn(game) ? "" : "disabled"}>${combatButtonLabel()}</button>` : ""}
     <button class="quiet-button" data-action="new-game">重新开始</button>
   </header>`;
@@ -273,8 +276,9 @@ function renderBattle() {
   const enemyArrivals = newCombatantIds(frame, previousFrame, "enemy");
   const eventType = frame.event?.type || "state";
   const finished = battleFrame >= frames.length - 1;
+  const headerState = battleHeaderState(battle, game.player, playerRank(game), finished);
   if (finished) battlePlaying = false;
-  app.innerHTML = `<main class="battle-screen">${renderTopbar()}
+  app.innerHTML = `<main class="battle-screen">${renderTopbar(headerState)}
     <section class="battle-stage battle-arena event-${eventType}" data-event-type="${eventType}">
       <header><div><small>第${game.round}回合 · ${battle.opponent.name}</small><h1 aria-live="polite">${frame.label}</h1></div><div class="playback">
         <button data-action="battle-toggle" ${finished ? "disabled" : ""}>${battlePlaying ? "暂停" : "播放"}</button>
@@ -285,7 +289,7 @@ function renderBattle() {
       <div class="combat-board enemy-board ${frame.event?.targetSide === "enemy" ? "impact-board" : ""}" data-count="${frame.enemy.length}"><div class="battle-side-badge"><small>对手</small><b>${battle.opponent.name}</b></div>${frame.enemy.map((item) => battleCard(item, "enemy", frame, enemyArrivals)).join("") || `<div class="defeated">全军覆没</div>`}</div>
       <div class="versus-line"><span></span><b>VS</b><i class="impact-flash" aria-hidden="true"></i><span></span></div>
       <div class="combat-board player-board ${frame.event?.targetSide === "player" ? "impact-board" : ""}" data-count="${frame.player.length}"><div class="battle-side-badge"><small>我方</small><b>${game.hero.name}</b></div>${frame.player.map((item) => battleCard(item, "player", frame, playerArrivals)).join("") || `<div class="defeated">全军覆没</div>`}</div>
-      <footer><div><p>${finished ? battleResultText(battle) : frame.event?.type === "attack" ? "高亮卡牌正在交战，数字为本次承受的伤害。" : frame.event?.type === "reborn" ? "复生：该随从以初始攻击力和1点生命值重新返回战场。" : "触发效果结算中，可暂停或调整播放速度。"}</p>${finished ? `<div class="battle-insights">${(battle.insights || []).map((text) => `<span>${text}</span>`).join("")}</div>` : ""}</div><button data-action="continue" ${finished ? "" : "disabled"}>${!game.player.alive || game.round >= game.maxRounds ? "查看结果" : "返回酒馆"}</button></footer>
+      <footer><div><p>${finished ? battleResultText(battle) : frame.event?.type === "attack" ? "高亮卡牌正在交战，数字为本次承受的伤害。" : frame.event?.type === "reborn" ? "复生：该随从以初始攻击力和1点生命值重新返回战场。" : "触发效果结算中，可暂停或调整播放速度。"}</p>${finished ? `<div class="battle-insights">${(battle.insights || []).map((text) => `<span>${text}</span>`).join("")}</div>` : ""}</div><button data-action="continue" ${finished ? "" : "disabled"}>${finished ? (!game.player.alive || game.round >= game.maxRounds ? "查看结果" : "返回酒馆") : "战斗结算中"}</button></footer>
     </section></main>`;
   requestAnimationFrame(() => positionAttackVector());
 }

@@ -996,13 +996,16 @@ function applyEndTurn(game, rng) {
 
 export function beginCombat(game, rng = Math.random) {
   if (game.phase !== "SHOP" || !game.player.board.length || game.pendingDiscover || game.pendingAction) return null;
+  const playerHealthBefore = game.player.health;
+  const playerArmorBefore = game.player.armor || 0;
+  const playerRankBefore = playerRank(game);
   applyEndTurn(game, rng);
   game.phase = "COMBAT";
   const combatSpells = { player: clone(game.player.combatSpells || {}), enemy: clone(game.currentOpponent.combatSpells || {}) };
   game.player.pendingOverconfidence = combatSpells.player.overconfidence || 0;
   game.player.combatSpells = {}; game.currentOpponent.combatSpells = {};
   const result = simulateBattle(game.player.board, game.currentOpponent.board, game.hero.power, rng, combatSpells);
-  game.battle = { ...result, opponent: clone(game.currentOpponent) };
+  game.battle = { ...result, opponent: clone(game.currentOpponent), playerHealthBefore, playerArmorBefore, playerRankBefore };
   applyCombatRewards(game, result.rewards.player, result.persistentBuffs.player);
   applyBotCombatRewards(game.currentOpponent, result.rewards.enemy, result.persistentBuffs.enemy);
   resolvePlayerBattle(game, game.currentOpponent, result);

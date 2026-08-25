@@ -1,10 +1,16 @@
 import assert from "node:assert/strict";
-import { attackVectorGeometry, battleFrameDelay, BATTLE_FRAME_TIMINGS, combatKeywordState, newCombatantIds } from "../src/battle-presentation.js";
+import { attackVectorGeometry, battleFrameDelay, battleHeaderState, BATTLE_FRAME_TIMINGS, combatKeywordState, newCombatantIds } from "../src/battle-presentation.js";
 
 assert.ok(BATTLE_FRAME_TIMINGS.attack > BATTLE_FRAME_TIMINGS.resolve, "攻击帧应比结算帧停留更久");
 assert.equal(battleFrameDelay({ event: { type: "attack" } }), 1400);
 assert.equal(battleFrameDelay({ event: { type: "attack" } }, 2), 700);
 assert.ok(battleFrameDelay({ event: { type: "attack" } }, 4, true) >= 140, "减少动态效果时仍应保留可读停顿");
+
+const settledPlayer = { health: 0, armor: 0 };
+const settledBattle = { winner: "enemy", damage: 8, playerHealthBefore: 6, playerArmorBefore: 2, playerRankBefore: 5 };
+assert.deepEqual(battleHeaderState(settledBattle, settledPlayer, 8, false), { health: 6, armor: 2, rank: 5 }, "战斗动画结束前不应提前展示结算后的生命和排名");
+assert.deepEqual(battleHeaderState(settledBattle, settledPlayer, 8, true), { health: 0, armor: 0, rank: 8 }, "战斗结果帧应展示最终生命和排名");
+assert.equal(battleHeaderState({ winner: "enemy", damage: 6 }, { health: 0, armor: 0 }, 8, false).health, 6, "旧存档战斗也应尽量恢复开战前生命");
 
 const previous = { player: [{ instanceId: "p1" }], enemy: [{ instanceId: "e1" }] };
 const resolved = { event: { type: "resolve" }, player: [{ instanceId: "p1" }, { instanceId: "p2" }], enemy: [] };
