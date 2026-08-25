@@ -358,11 +358,11 @@ function renderGameOver() {
       <label>有什么建议？<textarea name="suggestion" maxlength="1000" rows="3" placeholder="选填：哪里不顺、哪里不清楚，或最想调整什么"></textarea></label>
       <div class="feedback-actions"><p class="feedback-error" aria-live="polite"></p><button type="submit">提交反馈</button></div>
     </form>`;
-  app.innerHTML = `<main class="game-over"><span class="brand-mark">${result.rank === 1 ? "♛" : "✦"}</span><small>本局结束</small><h1>${result.title}</h1><p class="result-summary">${result.summary}</p>
+  app.innerHTML = `<main class="game-over"><section class="result-panel"><span class="brand-mark">${result.rank === 1 ? "♛" : "✦"}</span><small>本局结束</small><h1>${result.title}</h1><p class="result-summary">${result.summary}</p>
     <div class="result-stats"><span><b>${game.round}</b>回合</span><span><b>${game.stats.wins}</b>胜利</span><span><b>${game.player.health}</b>剩余生命</span><span><b>${game.stats.triples}</b>三连</span><span><b>${game.stats.spells}</b>法术</span></div>
     <p class="ranking-rule">${result.rankingRule}</p>
-    <div class="upload-status" aria-live="polite">${uploadStatusView(playtest)}</div>
-    ${feedback}<button class="restart-button" data-action="restart">${playtest.feedbackStatus === "SUBMITTED" ? "再来一局" : "暂不反馈，直接重开"}</button></main>`;
+    <div class="upload-status" aria-live="polite">${uploadStatusView(playtest)}</div></section>
+    <section class="result-feedback-stack">${feedback}<button class="restart-button" data-action="restart">${playtest.feedbackStatus === "SUBMITTED" ? "再来一局" : "暂不反馈，直接重开"}</button></section></main>`;
   if (playtest.gameUploadStatus === "PENDING") queueMicrotask(uploadCompletedGame);
 }
 
