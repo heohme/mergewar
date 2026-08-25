@@ -9,7 +9,7 @@ import { attackVectorGeometry, battleFrameDelay, combatKeywordState, newCombatan
 
 const app = document.querySelector("#app");
 const SAVE_KEY = "mergewar-save-v3";
-const CLIENT_VERSION = "prototype-v28";
+const CLIENT_VERSION = "prototype-v29";
 const MAX_BEHAVIOR_EVENTS = 300;
 let game = loadGame();
 let selectedBoardId = null;
@@ -230,18 +230,18 @@ function renderShop() {
   const targetHint = game.pendingAction ? `<div class="target-banner">${targetText} <button data-action="cancel-target">取消</button>${game.pendingAction.allowNoTarget ? `<button data-action="normal-play">普通打出</button>` : ""}</div>` : "";
   app.innerHTML = `<main class="game-shell shop-screen">${renderTopbar()}${targetHint}
     <div class="landscape-layout">${renderStandings()}
-      <section class="recruit-stage">
+      <section class="recruit-stage tavern-table">
         <div class="opponent-bar" title="${opponent.decisions?.join(" · ") || "正在规划阵容"}"><div><div class="opponent-name"><small>下一位对手</small><b>${opponent.name}</b></div><span>${opponent.hero} · ${opponent.tier}级酒馆 · 已升本${opponent.economy?.upgrades || 0}次</span></div>
           <div class="enemy-mini">${opponent.board.map((item) => `<span title="${item.name}"><img src="${item.imageUrl}" alt=""><i>${item.attack}/${item.health}</i></span>`).join("")}</div></div>
         <section class="zone shop-zone" data-drop-zone="shop" data-drop-label="松开出售 · +1铸币"><header><div class="zone-heading"><span class="zone-step">1</span><div><small>购买区 · 从这里挑选卡牌</small><h2>${game.player.tier}级酒馆商店 ${shopBuffStatus()}</h2></div></div><div class="shop-actions">
           <button data-action="upgrade" ${game.player.tier >= 6 || game.player.gold < game.player.upgradeCost ? "disabled" : ""}>升级 · ${game.player.tier >= 6 ? "满级" : game.player.upgradeCost}</button>
           <button data-action="refresh" ${game.player.gold < (game.player.freeRefresh || game.player.freeRefreshes ? 0 : 1) ? "disabled" : ""}>刷新 · ${game.player.freeRefresh || game.player.freeRefreshes ? "免费" : 1}</button>
           <button data-action="freeze" class="${game.player.frozen ? "active" : ""}">${game.player.frozen ? "已冻结" : "冻结"}</button>
-        </div></header><div class="zone-help">购买后卡牌会进入手牌；将场上随从拖回酒馆即可出售并获得1枚铸币。</div><div class="card-strip">${game.player.shop.map((item) => cardView(item, "shop")).join("") || `<div class="empty"><b>商店已买空</b><span>刷新后会补充新的随从和法术</span></div>`}</div></section>
+        </div></header><div class="zone-help">购买后进入手牌 · 将场上随从拖到这里出售</div><div class="card-strip shop-strip" data-count="${game.player.shop.length}">${game.player.shop.map((item) => cardView(item, "shop")).join("") || `<div class="empty"><b>商店已买空</b><span>刷新后会补充新的随从和法术</span></div>`}</div></section>
         <section class="zone board-zone" data-drop-zone="board" data-drop-label="松开上场"><header><div class="zone-heading"><span class="zone-step">2</span><div><small>上阵区 · 战斗时自动出战</small><h2>你的战队 <em>${game.player.board.length}/${MAX_BOARD}</em></h2></div></div><span>${selectedBoardId ? "再点一张随从可交换位置" : "拖动随从调整攻击顺序"}</span></header>
-          <div class="zone-help">将手牌随从拖到这里即可上场；场上随从可左右拖动调整攻击顺序，或拖回酒馆出售。</div><div class="card-strip board-strip" data-count="${game.player.board.length}">${game.player.board.map((item) => cardView(item, "board")).join("") || `<div class="empty board-empty"><b>战队还是空的</b><span>将下方手牌中的随从拖到这里上场</span></div>`}</div></section>
+          <div class="zone-help">从左到右依次攻击 · 拖动调整顺序 · 拖回上方出售</div><div class="card-strip board-strip" data-count="${game.player.board.length}">${game.player.board.map((item) => cardView(item, "board")).join("") || `<div class="empty board-empty"><b>战队还是空的</b><span>将下方手牌中的随从拖到这里上场</span></div>`}</div></section>
         <section class="zone hand-zone"><header><div class="zone-heading"><span class="zone-step">3</span><div><small>准备区 · 购买和获取的牌先到这里</small><h2>你的手牌 <em>${game.player.hand.length}/10</em></h2></div></div><span>随从拖到战队 · 法术拖到目标随从或点“施放”</span></header>
-          <div class="card-strip hand-strip">${game.player.hand.map((item) => cardView(item, "hand")).join("") || `<div class="empty compact"><b>手牌为空</b><span>从上方商店购买卡牌</span></div>`}</div></section>
+          <div class="card-strip hand-strip" data-count="${game.player.hand.length}">${game.player.hand.map((item) => cardView(item, "hand")).join("") || `<div class="empty compact"><b>手牌为空</b><span>从上方商店购买卡牌</span></div>`}</div></section>
       </section>
       <aside class="detail-panel">${renderDetail()}<div class="message-log"><b>最近事件</b>${game.messages.slice(0, 6).map((text) => `<p>${text}</p>`).join("")}</div></aside>
     </div>
@@ -274,15 +274,16 @@ function renderBattle() {
   const finished = battleFrame >= frames.length - 1;
   if (finished) battlePlaying = false;
   app.innerHTML = `<main class="battle-screen">${renderTopbar()}
-    <section class="battle-stage event-${eventType}" data-event-type="${eventType}">
+    <section class="battle-stage battle-arena event-${eventType}" data-event-type="${eventType}">
       <header><div><small>第${game.round}回合 · ${battle.opponent.name}</small><h1 aria-live="polite">${frame.label}</h1></div><div class="playback">
         <button data-action="battle-toggle" ${finished ? "disabled" : ""}>${battlePlaying ? "暂停" : "播放"}</button>
         <button data-action="battle-speed">${battleSpeed}×</button><button data-action="battle-prev" ${battleFrame === 0 ? "disabled" : ""}>‹</button><span>${battleFrame + 1}/${frames.length}</span><button data-action="battle-next" ${finished ? "disabled" : ""}>›</button><button data-action="battle-skip">跳到结果</button>
       </div></header>
+      <div class="battle-event-cue" aria-hidden="true"><span>${eventType === "attack" ? "交战" : eventType === "reborn" ? "复生" : eventType === "resolve" ? "结算" : "战斗"}</span></div>
       ${renderAttackVector(frame)}
-      <div class="combat-board enemy-board ${frame.event?.targetSide === "enemy" ? "impact-board" : ""}" data-count="${frame.enemy.length}"><label>${battle.opponent.name}</label>${frame.enemy.map((item) => battleCard(item, "enemy", frame, enemyArrivals)).join("") || `<div class="defeated">全军覆没</div>`}</div>
+      <div class="combat-board enemy-board ${frame.event?.targetSide === "enemy" ? "impact-board" : ""}" data-count="${frame.enemy.length}"><div class="battle-side-badge"><small>对手</small><b>${battle.opponent.name}</b></div>${frame.enemy.map((item) => battleCard(item, "enemy", frame, enemyArrivals)).join("") || `<div class="defeated">全军覆没</div>`}</div>
       <div class="versus-line"><span></span><b>VS</b><i class="impact-flash" aria-hidden="true"></i><span></span></div>
-      <div class="combat-board player-board ${frame.event?.targetSide === "player" ? "impact-board" : ""}" data-count="${frame.player.length}"><label>你的战队</label>${frame.player.map((item) => battleCard(item, "player", frame, playerArrivals)).join("") || `<div class="defeated">全军覆没</div>`}</div>
+      <div class="combat-board player-board ${frame.event?.targetSide === "player" ? "impact-board" : ""}" data-count="${frame.player.length}"><div class="battle-side-badge"><small>我方</small><b>${game.hero.name}</b></div>${frame.player.map((item) => battleCard(item, "player", frame, playerArrivals)).join("") || `<div class="defeated">全军覆没</div>`}</div>
       <footer><div><p>${finished ? battleResultText(battle) : frame.event?.type === "attack" ? "高亮卡牌正在交战，数字为本次承受的伤害。" : frame.event?.type === "reborn" ? "复生：该随从以初始攻击力和1点生命值重新返回战场。" : "触发效果结算中，可暂停或调整播放速度。"}</p>${finished ? `<div class="battle-insights">${(battle.insights || []).map((text) => `<span>${text}</span>`).join("")}</div>` : ""}</div><button data-action="continue" ${finished ? "" : "disabled"}>${!game.player.alive || game.round >= game.maxRounds ? "查看结果" : "返回酒馆"}</button></footer>
     </section></main>`;
   requestAnimationFrame(() => positionAttackVector());

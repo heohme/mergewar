@@ -373,3 +373,71 @@ button:disabled { opacity: .36; cursor: not-allowed; }
   .enemy-mini { max-width: 48%; }.shop-actions { width: 100%; }.shop-actions button { flex: 1; }
   .game-card { flex-basis: 136px; }
 }
+
+/* Tavern and combat stage v31: one continuous play surface instead of stacked panels. */
+.landscape-layout { grid-template-columns: clamp(150px,12vw,178px) minmax(0,1fr) clamp(230px,19vw,280px); gap: 8px; padding: 8px 8px 74px; }
+.recruit-stage { gap: 7px; }
+.opponent-bar { min-height: 52px; padding: 7px 12px; border-color: rgba(242,198,109,.18); background: linear-gradient(90deg,rgba(61,43,68,.82),rgba(29,23,37,.88)); }
+.opponent-bar > div:first-child { gap: 2px; }.opponent-bar b { font-size: 15px; }.opponent-bar span { font-size: 8px; }
+.zone { padding: 9px 10px; }.zone::before { top: 8px; bottom: 8px; width: 3px; border-radius: 0 4px 4px 0; box-shadow: 0 0 14px color-mix(in srgb,var(--zone-accent,var(--gold)) 34%,transparent); }.zone > header { position: relative; z-index: 2; min-height: 34px; margin-bottom: 4px; }.zone h2 { font-size: 14px; }.zone small,.zone header > span { font-size: 7px; }.zone-help { margin: 0 0 5px 37px; font-size: 7px; }
+.shop-zone { border-color: rgba(242,198,109,.2); background: radial-gradient(ellipse at 50% 118%,rgba(152,84,42,.3),transparent 54%),linear-gradient(135deg,rgba(57,43,49,.97),rgba(30,23,38,.97)); }
+.board-zone { border-color: rgba(121,214,163,.2); background: radial-gradient(ellipse at 50% 62%,rgba(77,135,103,.2),transparent 62%),linear-gradient(180deg,rgba(27,42,39,.94),rgba(24,19,31,.97)); }
+.hand-zone { border-color: rgba(118,201,231,.2); background: radial-gradient(ellipse at 50% 120%,rgba(69,139,172,.2),transparent 64%),linear-gradient(180deg,rgba(27,39,50,.94),rgba(20,17,27,.98)); }
+.card-strip { position: relative; z-index: 1; }.shop-card { transition: transform .18s ease,border-color .18s ease,box-shadow .18s ease; }.shop-card:hover { z-index: 3; transform: translateY(-3px); border-color: rgba(242,198,109,.56); box-shadow: 0 14px 28px rgba(0,0,0,.45),0 0 18px rgba(242,198,109,.12); }
+.board-strip { justify-content: center; gap: clamp(7px,1.1vw,17px); padding: 4px 9px 1px; }
+
+.battle-screen { background: radial-gradient(ellipse at 50% 48%,rgba(121,72,140,.36),transparent 52%),linear-gradient(#130f19,#08070b); }
+.battle-stage { grid-template-rows: 54px 1fr 28px 1fr minmax(52px,auto); gap: 2px; padding: 7px max(14px,env(safe-area-inset-right)) max(7px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left)); isolation: isolate; }
+.battle-stage::before { position: absolute; z-index: -1; inset: 54px 1.2% 51px; content: ""; border: 1px solid rgba(255,255,255,.07); border-radius: 46% / 10%; background: radial-gradient(ellipse at 50% 50%,rgba(106,68,126,.34),rgba(37,27,47,.78) 58%,rgba(18,14,24,.96) 100%); box-shadow: inset 0 0 80px rgba(9,7,12,.72),0 20px 60px rgba(0,0,0,.28); }
+.attack-vector { inset: 54px 18px 52px; width: calc(100% - 36px); height: calc(100% - 106px); filter: drop-shadow(0 0 6px rgba(242,198,109,.9)); }.attack-vector line { stroke-width: 4; }
+.combat-board { gap: clamp(8px,1.15vw,18px); padding: 15px clamp(72px,8vw,118px) 6px; border: 0; border-radius: 46% / 18%; background: radial-gradient(ellipse at 50% 66%,rgba(105,71,121,.24),transparent 67%); box-shadow: inset 0 -1px rgba(255,255,255,.035); }
+.battle-side-badge { position: absolute; z-index: 4; top: 50%; left: 14px; width: clamp(62px,6vw,90px); display: flex; flex-direction: column; gap: 2px; padding: 7px 8px; transform: translateY(-50%); border: 1px solid rgba(242,198,109,.2); border-radius: 10px; background: rgba(19,15,25,.72); box-shadow: 0 7px 20px rgba(0,0,0,.25); backdrop-filter: blur(8px); }.battle-side-badge small { color: var(--gold); font-size: 7px; }.battle-side-badge b { overflow: hidden; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }.player-board .battle-side-badge { border-color: rgba(121,214,163,.24); }.player-board .battle-side-badge small { color: #9ee5bd; }
+.combat-card { width: clamp(92px,9.4vw,136px); height: min(22.5vh,174px); border-radius: 50% 50% 18px 18px; box-shadow: 0 13px 27px rgba(0,0,0,.4); }.combat-board[data-count="1"] .combat-card { width: clamp(148px,15vw,194px); height: min(28vh,226px); }.combat-board[data-count="2"] .combat-card { width: clamp(126px,13vw,168px); height: min(26vh,202px); }.combat-board[data-count="3"] .combat-card { width: clamp(112px,11.6vw,154px); height: min(24.5vh,186px); }
+.battle-event-cue { position: absolute; z-index: 9; top: 50%; left: 50%; transform: translate(-50%,-50%); pointer-events: none; }.battle-event-cue span { display: block; padding: 5px 13px; border: 1px solid rgba(242,198,109,.55); border-radius: 99px; color: #2b1b12; background: linear-gradient(135deg,#ffe69b,#e79952); box-shadow: 0 0 24px rgba(242,198,109,.36); font-size: 9px; font-weight: 950; letter-spacing: .18em; opacity: 0; }.event-attack .battle-event-cue span { animation: battle-cue 1.25s ease-out both; }
+@keyframes battle-cue { 0%,24% { opacity: 0; transform: scale(.62); } 36%,56% { opacity: 1; transform: scale(1); } 82%,100% { opacity: 0; transform: scale(1.15); } }
+.combat-card.shield::before { inset: -11px; border-width: 5px; border-radius: 54% 54% 22px 22px; background: linear-gradient(118deg,rgba(255,248,202,.62),rgba(120,216,255,.32) 35%,rgba(255,213,95,.18) 58%,rgba(255,184,42,.48)),radial-gradient(circle at 28% 16%,rgba(255,255,235,.78),transparent 38%); box-shadow: inset 0 0 30px rgba(255,229,146,.54),inset 0 -22px 34px rgba(88,182,235,.2),0 0 0 3px rgba(125,219,255,.34),0 0 30px rgba(255,191,52,.78); }
+.reborn-vfx { top: 52%; right: auto; bottom: auto; left: 50%; width: 40px; height: 40px; transform: translate(-50%,-50%); box-shadow: inset 0 0 0 2px rgba(20,73,52,.68),0 0 0 2px rgba(92,222,157,.22),0 0 17px rgba(82,233,157,.86); }.combat-art { height: 100%; flex-basis: 100%; }.combat-art::after { position: absolute; inset: 55% 0 0; content: ""; background: linear-gradient(transparent,rgba(9,7,12,.92)); }.combat-card > b { position: absolute; right: 24px; bottom: 28px; left: 24px; width: auto; padding: 4px; font: 800 9px Georgia,"Songti SC",serif; text-shadow: 0 2px 3px #000; }
+
+@media (min-width: 1001px) {
+  .shop-screen .landscape-layout { height: calc(100vh - 68px); height: calc(100dvh - 68px); padding: 8px; }
+  .shop-screen .recruit-stage { grid-template-rows: 52px minmax(210px,1.25fr) minmax(176px,1fr) minmax(132px,.72fr); gap: 6px; }
+  .shop-screen .action-bar { display: none; }
+  .shop-screen .zone-help { display: none; }
+  .shop-screen .shop-zone .game-card { flex: 1 0 142px; max-width: 238px; }
+  .shop-screen .shop-strip[data-count="1"],.shop-screen .shop-strip[data-count="2"] { justify-content: center; }
+  .shop-screen .shop-card-copy { min-height: 43%; padding: 19px 8px 35px; }.shop-screen .shop-card-copy > p { font-size: 7.5px; -webkit-line-clamp: 2; }
+  .shop-screen .board-zone .board-minion { width: clamp(98px,9vw,126px); flex-basis: clamp(98px,9vw,126px); min-height: 0; height: 100%; max-height: 172px; transform: none; margin: 0; }
+  .shop-screen .board-zone .minion-portrait { width: clamp(88px,8vw,112px); height: clamp(92px,12.2vh,116px); flex-basis: clamp(92px,12.2vh,116px); transform: none; margin: 0; }
+  .shop-screen .board-zone .board-minion-actions { width: clamp(90px,8vw,116px); margin-top: 3px; }.shop-screen .board-zone .board-minion-actions button { min-height: 28px; padding: 4px; }
+  .shop-screen .board-zone .board-minion-actions { position: absolute; z-index: 10; bottom: 0; left: 50%; transform: translateX(-50%); }
+  .shop-screen .board-zone .board-minion .keyword-row { position: absolute; z-index: 11; right: 0; bottom: 30px; left: 0; justify-content: center; margin: 0; }
+  .shop-screen .hand-strip { align-items: stretch; padding: 0 4px 2px; }
+  .shop-screen .hand-strip .game-card { flex: 0 0 clamp(98px,8.5vw,128px); height: 100%; min-height: 0; padding: 0; isolation: isolate; }
+  .shop-screen .hand-strip .art-button { position: absolute; z-index: 1; inset: 0; width: 100%; height: 100%; margin: 0; border-radius: inherit; }.shop-screen .hand-strip .art-button img { width: 140%; height: 100%; margin-left: -20%; object-fit: cover; }.shop-screen .hand-strip .art-button::after { position: absolute; inset: 45% 0 0; content: ""; background: linear-gradient(transparent,rgba(7,6,9,.95)); }.shop-screen .hand-strip .art-button span { z-index: 2; bottom: 24px; padding: 12px 4px 3px; font-size: 9px; }
+  .shop-screen .hand-strip .tier-gem { z-index: 5; }.shop-screen .hand-strip .golden-sheen,.shop-screen .hand-strip .golden-badge { z-index: 4; }.shop-screen .hand-strip .card-meta,.shop-screen .hand-strip .keyword-row,.shop-screen .hand-strip .game-card > p { display: none; }
+  .shop-screen .hand-strip .card-stats { z-index: 6; right: 5px; bottom: 3px; left: 5px; }.shop-screen .hand-strip .card-stats b { min-width: 24px; height: 24px; font-size: 9px; }.shop-screen .hand-strip .card-controls { position: absolute; z-index: 7; bottom: 4px; left: 50%; width: 48%; padding: 0; transform: translateX(-50%); }.shop-screen .hand-strip .card-controls > button { min-height: 22px; padding: 3px; border-color: rgba(255,231,171,.58); color: #241920; background: linear-gradient(135deg,#f2cc79,#de8b56); font-size: 7px; font-weight: 900; }
+}
+
+@media (min-width: 1001px) and (max-height: 900px) {
+  .shop-screen .recruit-stage { grid-template-rows: 46px minmax(190px,1.18fr) minmax(164px,.98fr) minmax(124px,.68fr); gap: 5px; }
+  .shop-screen .opponent-bar { min-height: 46px; }
+  .shop-screen .zone { padding-block: 6px; }
+  .shop-screen .zone > header { min-height: 29px; }
+  .shop-screen .shop-zone .game-card { min-height: 0; max-height: none; }
+  .shop-screen .board-zone .board-minion { min-height: 0; transform: none; margin: 0; }
+  .shop-screen .board-zone .minion-portrait { transform: none; margin: 0; }
+  .shop-screen .hand-strip .game-card { height: 100%; min-height: 0; }
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .shop-screen .recruit-stage { grid-template-columns: minmax(0,1.1fr) minmax(360px,1fr); grid-template-rows: 38px minmax(0,1.2fr) minmax(0,.8fr); }
+  .shop-screen .board-strip { justify-content: center; gap: 2px; padding-inline: 1px; }
+  .shop-screen .board-zone .board-minion,.shop-screen .board-zone .board-strip[data-count="7"] .board-minion { width: 48px; flex: 0 0 48px; min-height: 0; height: 100%; transform: none; margin: 0; }.shop-screen .board-zone .minion-portrait { width: 44px; height: 50px; flex-basis: 50px; border-width: 2px; transform: none; margin: 0; }.shop-screen .board-zone .minion-portrait > b { right: 1px; bottom: 3px; left: 1px; padding: 7px 1px 2px; font-size: 5.5px; }.shop-screen .board-zone .minion-tier { top: -4px; left: -3px; width: 17px; height: 17px; border-width: 1px; font-size: 6px; }.shop-screen .board-zone .minion-stats { right: -3px; bottom: -6px; left: -3px; }.shop-screen .board-zone .minion-stats strong { min-width: 19px; height: 19px; padding: 0 2px; border-width: 1px; font-size: 7px; }.shop-screen .board-zone .board-minion .keyword-row { display: none; }.shop-screen .board-zone .board-minion-actions { width: 46px; }.shop-screen .board-zone .board-minion-actions button { min-height: 27px; padding: 2px; font-size: 6px; }
+  .shop-screen .hand-strip .game-card { flex-basis: 78px; height: 100%; min-height: 0; }
+  .shop-screen .hand-zone .art-button { height: 25px; }.shop-screen .hand-zone .card-controls > button { min-height: 20px; padding: 2px; font-size: 6px; }
+  .battle-stage { grid-template-rows: 40px minmax(0,1fr) 18px minmax(0,1fr) 42px; }.battle-stage::before { inset-block: 40px 42px; }.combat-board { padding: 7px 58px 3px; }.battle-side-badge { left: 5px; width: 50px; padding: 4px; }.combat-card,.combat-board[data-count] .combat-card { width: clamp(72px,10vw,102px); height: min(27vh,118px); }.combat-card > b { right: 18px; bottom: 22px; left: 18px; font-size: 7px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .battle-event-cue span,.shop-card { animation: none !important; transition: none !important; }
+}
