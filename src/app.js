@@ -635,7 +635,7 @@ app.addEventListener("drop", (event) => {
 
 app.addEventListener("pointerdown", (event) => {
   const card = event.target.closest('.game-card[data-zone="board"],.game-card[data-zone="hand"]');
-  if (!card || event.target.closest(".card-controls,.board-minion-actions") || (event.pointerType === "mouse" && event.button !== 0)) return;
+  if (!card || event.target.closest(".board-minion-actions") || (event.pointerType === "mouse" && event.button !== 0)) return;
   pointerDrag = { id: card.dataset.cardId, sourceZone: card.dataset.zone, x: event.clientX, y: event.clientY, moved: false };
   if (event.pointerType !== "mouse") card.setPointerCapture?.(event.pointerId);
 });
