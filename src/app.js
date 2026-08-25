@@ -1,15 +1,15 @@
-import { HEROES, MAX_BOARD, MINIONS, TRIBES } from "./data.js?v=31";
+import { HEROES, MAX_BOARD, MINIONS, TRIBES } from "./data.js?v=33";
 import {
   activateMinion, advanceRound, beginCombat, buyMinion, cancelPendingAction, canEndTurn,
   castSpell, chooseDiscover, createGame, gameResult, moveMinion, playCard, playerRank,
   reconcileBotUpgradeScaling, reconcileCardDefinitions, refreshShop, reorderMinion, resolvePendingTarget, resolveTriples, sellMinion, standings, toggleFreeze,
   startHeroPower, upgradeTavern,
-} from "./engine.js?v=32";
-import { attackVectorGeometry, battleFrameDelay, battleHeaderState, combatKeywordState, newCombatantIds } from "./battle-presentation.js?v=32";
+} from "./engine.js?v=33";
+import { attackVectorGeometry, battleFrameDelay, battleHeaderState, combatKeywordState, newCombatantIds } from "./battle-presentation.js?v=33";
 
 const app = document.querySelector("#app");
 const SAVE_KEY = "mergewar-save-v3";
-const CLIENT_VERSION = "prototype-v32";
+const CLIENT_VERSION = "prototype-v33";
 const MAX_BEHAVIOR_EVENTS = 300;
 let game = loadGame();
 let selectedBoardId = null;
@@ -128,7 +128,7 @@ function boardMinionView(card) {
   ].join("");
   return `<article class="game-card board-minion ${card.golden ? "golden" : ""} ${pendingTarget ? "valid-target" : ""} ${selected ? "selected" : ""}"
       data-card-id="${card.instanceId}" data-zone="board" data-kind="MINION" data-tribe="${card.tribe}" draggable="true">
-    <div class="minion-portrait">${effects}${goldenDecor(card)}<span class="minion-art"><img src="${card.imageUrl}" alt="${card.name}" loading="lazy"></span><span class="minion-tier">${card.tier}</span>
+    <div class="minion-portrait">${effects}${goldenDecor(card)}<span class="minion-art"><img src="${card.imageUrl}" alt="${card.name}" loading="lazy" draggable="false"></span><span class="minion-tier">${card.tier}</span>
       <b>${card.golden ? "✦ " : ""}${card.name}</b><div class="minion-stats"><strong>${card.attack}</strong><strong>${card.health}</strong></div></div>
     ${keywordBadges(card, true)}
     <div class="board-minion-actions">${card.activate ? `<button data-action="activate" data-id="${card.instanceId}" ${card.activatedThisTurn || game.player.gold < card.activateCost ? "disabled" : ""}>发动 · ${card.activateCost}</button>` : ""}<button data-action="sell" data-id="${card.instanceId}">出售</button></div>
@@ -162,7 +162,7 @@ function cardView(card, zone) {
     ${goldenDecor(card)}
     <div class="tier-gem">${card.tier || "✦"}</div>
     <button class="art-button" data-action="inspect" data-id="${card.instanceId}">
-      <img src="${card.imageUrl}" alt="${card.name}" loading="lazy"><span>${card.name}</span>
+      <img src="${card.imageUrl}" alt="${card.name}" loading="lazy" draggable="false"><span>${card.name}</span>
     </button>
     <div class="card-meta">${tribeLabel(card)}</div>
     ${keywordBadges(card)}
@@ -600,6 +600,8 @@ app.addEventListener("dragstart", (event) => {
   dragState = { id: card.dataset.cardId, sourceZone: card.dataset.zone };
   event.dataTransfer.effectAllowed = "move";
   event.dataTransfer.setData("text/plain", card.dataset.cardId);
+  const rect = card.getBoundingClientRect();
+  event.dataTransfer.setDragImage(card, Math.max(0, Math.min(rect.width, event.clientX - rect.left)), Math.max(0, Math.min(rect.height, event.clientY - rect.top)));
   updateDragPresentation(dragState.id, dragState.sourceZone);
 });
 

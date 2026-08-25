@@ -312,6 +312,18 @@ assert.equal(resolvePendingTarget(targetedActivateGame, targetedActivateGame.pla
 assert.equal(targetedActivateGame.player.board[0].attack, 7, "丧钟死灵发动后应获得+4/+4");
 assert.equal(targetedActivateGame.player.board.filter((item) => item.baseId === "BG_ICC_026t").length, 2, "发动消灭亡语随从时应正确触发亡语");
 
+const prisonGuardGame = createGame(HEROES[0].id, fixed);
+const prisonGuard = createMinion(minion("BG36_345"), false, prisonGuardGame.player.modifiers);
+const prisonGuardFriend = createMinion(minion("BG28_300"), false, prisonGuardGame.player.modifiers);
+prisonGuardGame.player.hand = [prisonGuard]; prisonGuardGame.player.board = [prisonGuardFriend]; prisonGuardGame.player.gold = 3;
+assert.equal(playCard(prisonGuardGame, prisonGuard.instanceId, null, false, fixed), true, "可疑的监狱守卫上场时不应要求选择发动目标");
+assert.equal(prisonGuardGame.pendingAction, null);
+assert.equal(prisonGuardGame.player.board.length, 2);
+assert.deepEqual([prisonGuardFriend.attack, prisonGuardFriend.health], [1, 1], "上场本身不应触发监狱守卫的发动强化");
+assert.equal(activateMinion(prisonGuardGame, prisonGuard.instanceId, null, fixed), "PENDING", "只有点击发动后才应选择另一个随从");
+assert.equal(resolvePendingTarget(prisonGuardGame, prisonGuardFriend.instanceId, fixed), true);
+assert.deepEqual([prisonGuardFriend.attack, prisonGuardFriend.health], [4, 4], "选择发动目标后才获得+3/+3");
+
 const heroPowerGame = createGame("TB_BaconShop_HERO_41", fixed);
 heroPowerGame.player.board = [createMinion(minion("BG35_814"))];
 assert.equal(startHeroPower(heroPowerGame), "PENDING", "雷诺英雄技能应从英雄区域进入目标选择");

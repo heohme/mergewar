@@ -290,7 +290,7 @@ export function playCard(game, instanceId, targetId = null, forceNormal = false,
   if (!card || card.lockedTurns > 0) return false;
   if (card.kind === "SPELL") return castSpell(game, instanceId, targetId, rng);
   const magnetic = hasScript(card, "MAGNETIC") || card.keywords.includes("MAGNETIC");
-  const targetType = magnetic ? "MAGNETIC" : card.targeted;
+  const targetType = magnetic ? "MAGNETIC" : card.playTargeted || ((card.battlecry || card.chooseOne) ? card.targeted : null);
   const targets = validTargets(game, card, targetType);
   if (!targetId && targets.length && !forceNormal) {
     game.pendingAction = { type: "PLAY", instanceId, targetType, validIds: targets.map((item) => item.instanceId), allowNoTarget: magnetic };
@@ -465,13 +465,14 @@ export function activateMinion(game, instanceId, targetId = null, rng = Math.ran
   if (game.phase !== "SHOP") return false;
   const source = game.player.board.find((item) => item.instanceId === instanceId);
   if (!source?.activate || source.activatedThisTurn || game.player.gold < source.activateCost) return false;
-  const targets = validTargets(game, source, source.targeted);
+  const targetType = source.activateTargeted || source.targeted;
+  const targets = validTargets(game, source, targetType);
   if (!targetId && targets.length && !resolving) {
     game.pendingAction = { type: "ACTIVATE", instanceId, validIds: targets.map((item) => item.instanceId) };
     return "PENDING";
   }
   const target = targetId ? targets.find((item) => item.instanceId === targetId) : null;
-  if (source.targeted && !target) return false;
+  if (targetType && !target) return false;
   spendGold(game.player, source.activateCost);
   source.activatedThisTurn = true;
   const mult = source.golden ? 2 : 1;

@@ -43,7 +43,7 @@ export const UNDEAD = [
   m("BG32_340", "噬渊施法者", "UNDEAD", 4, 4, 5, "战吼：消灭一个友方亡灵以发现一张亡灵牌。", { battlecry: "MAWCASTER", targeted: "OTHER_UNDEAD" }),
   m("BG32_880", "友善的恶鬼", "UNDEAD", 4, 6, 3, "亡语：在本局对战中，你的酒馆法术使随从额外获得+1攻击力。", { deathrattle: { modifier: "spellAttack", amount: 1 } }),
   m("BG34_690", "疫病行尸", "UNDEAD", 4, 4, 2, "亡语：在本局对战中，你的亡灵拥有+2攻击力。（如果在战斗之外触发，改为+4！）", { deathrattle: { modifier: "undeadAttack", amount: 2, recruitAmount: 4 } }),
-  m("BG36_511", "丧钟死灵", "UNDEAD", 4, 3, 6, "发动（1）：使一个不同的友方亡灵获得复生，然后消灭该亡灵以获得+4/+4。", { activate: "BELL_NECRO", activateCost: 1, targeted: "OTHER_UNDEAD" }),
+  m("BG36_511", "丧钟死灵", "UNDEAD", 4, 3, 6, "发动（1）：使一个不同的友方亡灵获得复生，然后消灭该亡灵以获得+4/+4。", { activate: "BELL_NECRO", activateCost: 1, activateTargeted: "OTHER_UNDEAD" }),
   m("BG32_324", "德鲁斯特堕落屠夫", "UNDEAD", 5, 2, 9, "复仇（4）：获取一张宰割。", { avenge: { count: 4, rewardSpell: "BG28_604" } }),
   m("BG36_514", "障蔽女妖", "UNDEAD", 5, 7, 7, "在一个友方随从复生后，获得圣盾和+7/+7。", { scripts: ["BANSHEE_REBORN"] }),
   m("BG25_009", "永恒召唤者", "UNDEAD", 6, 8, 1, "复生。亡语：召唤1个永恒骑士。", { keywords: ["REBORN"], deathrattle: { summon: "eternal_knight", count: 1 } }),
@@ -64,7 +64,7 @@ export const DRAGONS = [
   m("BG33_924", "蓝色雏龙", "DRAGON", 3, 1, 5, "进击：在本局对战中，你的酒馆法术使随从额外获得+1生命值。", { rally: "SPELL_HEALTH" }),
   m("BG36_240", "受雇坐骑", "DRAGON", 3, 3, 5, "发动（2）：随机获取一张多彩幼龙。", { activate: "GET_CHROMATIC", activateCost: 2 }),
   m("BG36_242", "青铜时光行者", "DRAGON", 4, 2, 9, "进击：随机获取一张多彩幼龙。", { rally: "GET_CHROMATIC" }),
-  m("BG36_243", "天诞逃生飞龙", "DRAGON", 4, 4, 7, "发动（1）：触发一个友方随从的进击效果。", { activate: "TRIGGER_RALLY", activateCost: 1, targeted: "RALLY" }),
+  m("BG36_243", "天诞逃生飞龙", "DRAGON", 4, 4, 7, "发动（1）：触发一个友方随从的进击效果。", { activate: "TRIGGER_RALLY", activateCost: 1, activateTargeted: "RALLY" }),
   m("BG29_813", "执念诗心龙", "DRAGON", 4, 2, 3, "圣盾。相邻的龙可永久保留战斗阶段获得的额外关键词和属性值。", { keywords: ["DIVINE_SHIELD"], scripts: ["POET"] }),
   m("BG36_245", "符文奥术师", "DRAGON", 4, 2, 4, "战斗开始时：施放闪亮的戒指，触发两次。", { combatStart: "RING_TWICE" }),
   m("BGS_041", "奥术守护者卡雷苟斯", "DRAGON", 5, 4, 12, "在你触发一个战吼后，使你的龙获得+2/+2。", { scripts: ["KALECGOS"] }),
@@ -176,7 +176,7 @@ export const BEASTS = [
 ];
 
 export const NEUTRALS = [
-  m("BG36_345", "可疑的监狱守卫", "NEUTRAL", 1, 3, 3, "发动（1）：使另一个随从获得+3/+3。", {"scripts":["BG36_345"],"activate":"BG36_345","activateCost":1,"targeted":"OTHER_MINION"}),
+  m("BG36_345", "可疑的监狱守卫", "NEUTRAL", 1, 3, 3, "发动（1）：使另一个随从获得+3/+3。", {"scripts":["BG36_345"],"activate":"BG36_345","activateCost":1,"activateTargeted":"OTHER_MINION"}),
   m("BG24_715", "耐心的侦查员", "NEUTRAL", 2, 1, 1, "当你出售本随从时，发现一个等级1的随从。", {"scripts":["BG24_715"],"endTurn":"BG24_715"}),
   m("BG27_002", "软泥角斗士", "NEUTRAL", 2, 2, 2, "战吼：获取两张可以使随从获得+1/+1和嘲讽的黏黏盾。", {"scripts":["BG27_002"],"battlecry":"BG27_002"}),
   m("BG32_237", "新锐植物学家", "NEUTRAL", 2, 3, 4, "抉择：在本局对战中，你的酒馆法术使随从额外获得+1攻击力；或者+1生命值。", {"scripts":["BG32_237"],"chooseOne":"BG32_237"}),
@@ -198,7 +198,7 @@ export const NEUTRALS = [
   m("BG28_550", "竞技表演者", "NEUTRAL", 5, 3, 4, "战吼：发现一张酒馆法术牌。", {"scripts":["BG28_550"],"battlecry":"BG28_550"}),
   m("BG35_123", "灾变先锋", "NEUTRAL", 5, 6, 10, "在你的回合结束时，获取你施放的上一个酒馆法术的一张复制。", {"scripts":["BG35_123"],"endTurn":"BG35_123"}),
   m("BG35_883", "巴琳达·斯通赫尔斯", "NEUTRAL", 6, 6, 6, "你的以友方随从为目标的法术会施放 两次。", {"scripts":["BG35_883"]}),
-  m("BG36_356", "泰瑞尔", "NEUTRAL", 6, 10, 10, "发动（2）：将另一个随从的属性值变为50/50。", {"scripts":["BG36_356"],"activate":"BG36_356","activateCost":2,"targeted":"OTHER_MINION"}),
+  m("BG36_356", "泰瑞尔", "NEUTRAL", 6, 10, 10, "发动（2）：将另一个随从的属性值变为50/50。", {"scripts":["BG36_356"],"activate":"BG36_356","activateCost":2,"activateTargeted":"OTHER_MINION"}),
 ];
 
 export const MINIONS = [...UNDEAD, ...DRAGONS, ...MECHS, ...ELEMENTALS, ...QUILBOAR, ...BEASTS, ...NEUTRALS];

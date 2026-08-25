@@ -6,6 +6,7 @@
   --gold: #f2c66d; --orange: #e9905b; --red: #e86b70; --blue: #74c8e8;
 }
 * { box-sizing: border-box; }
+img { -webkit-user-drag: none; user-select: none; }
 html, body, #app { width: 100%; min-width: 320px; min-height: 100%; margin: 0; }
 html { overflow-x: hidden; background: var(--bg); }
 body { overflow-x: hidden; color: var(--text); background: radial-gradient(circle at 50% -20%, #392248, transparent 42%), linear-gradient(145deg, #15101d, #0b090e 72%); }
