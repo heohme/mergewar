@@ -1,0 +1,27 @@
+src/app.js
+  s_a10de54ede7099::t_14c1e07154d9e6 1,7-8,12,63,212
+index.html
+  s_a10de54ede7099::t_14c1e07154d9e6 8,12
+src/engine.js
+  s_a10de54ede7099::t_14c1e07154d9e6 91,101,551,1492,1541
+test/engine.test.mjs
+  s_a10de54ede7099::t_14c1e07154d9e6 35,82
+styles.css
+  s_a10de54ede7099::t_14c1e07154d9e6 444-456
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.5",
+  "base_commit_sha": "23a412ed32f8cf7693bef42e7106038d726e967d",
+  "prompts": {},
+  "sessions": {
+    "s_a10de54ede7099": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a03210-cdeb-74a3-a02a-8afa00d853d1",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "贺庆阳 <heqingyang@xiaohongshu.com>"
+    }
+  }
+}
