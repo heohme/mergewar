@@ -333,16 +333,21 @@ button:disabled { opacity: .36; cursor: not-allowed; }
 @media (orientation: landscape) and (max-height: 500px) {
   .start-screen { align-items: start; grid-template-columns: minmax(210px,.7fr) minmax(0,1.6fr); gap: 16px; padding: max(12px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left)); }.start-copy { padding-top: 12px; text-align: left; }.start-copy h1 { margin-inline: 0; font-size: clamp(34px,7vw,54px); }.hero-grid { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 7px; }.hero-choice { min-height: 0; height: calc(100dvh - 24px); max-height: 330px; padding: 0 9px 9px; }.hero-choice img { width: calc(100% + 18px); height: 42%; margin: 0 -9px 8px; }.hero-choice strong { font-size: 15px; }.hero-choice p { display: -webkit-box; overflow: hidden; font-size: 9px; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }.legal-note { display: none; }
   .topbar { height: 54px; }.hero img { width: 32px; height: 32px; }.round b { font-size: 20px; }.hero-power-control { min-height: 38px; }.topbar-combat { display: none; }
+  .shop-screen .topbar { grid-template-columns: 44px minmax(0,1fr) auto; }
+  .shop-screen .round { min-width: 0; gap: 2px; white-space: nowrap; }
+  .shop-screen .round span { display: none; }
+  .shop-screen .resources { min-width: 0; display: flex; gap: 3px; }
+  .shop-screen .resources span { min-width: 39px; padding: 5px 4px; font-size: 8px; }
   .landscape-layout { padding-top: 6px; }.standings { max-height: calc(100dvh - 62px); overflow-y: auto; }.opponent-bar { min-height: 55px; }.zone { padding-block: 7px; }.game-card { flex-basis: 106px; min-height: 154px; }.art-button { height: 52px; }.game-card > p { min-height: 27px; }.hand-strip .game-card { min-height: 124px; }
   .shop-screen { height: 100dvh; overflow: hidden; }
   .shop-screen .landscape-layout { height: calc(100dvh - 54px); grid-template-columns: minmax(0,1fr); padding: 5px max(7px,env(safe-area-inset-right)) calc(58px + env(safe-area-inset-bottom)) max(7px,env(safe-area-inset-left)); overflow: hidden; }
   .shop-screen .standings,.shop-screen .detail-panel { display: none; }
-  .shop-screen .recruit-stage { height: 100%; min-height: 0; display: grid; grid-template-columns: minmax(0,1.35fr) minmax(270px,1fr); grid-template-rows: 42px minmax(0,1.45fr) minmax(0,1fr); gap: 5px; overflow: hidden; }
+  .shop-screen .recruit-stage { height: 100%; min-height: 0; display: grid; grid-template-columns: minmax(270px,1fr) minmax(0,1.15fr); grid-template-rows: 42px minmax(0,1.45fr) minmax(0,1fr); gap: 5px; overflow: hidden; }
   .shop-screen .opponent-bar { grid-column: 1 / -1; min-height: 42px; padding-block: 4px; }
   .shop-screen .shop-zone { grid-row: 2 / 4; grid-column: 1; }
   .shop-screen .board-zone { grid-row: 2; grid-column: 2; }
   .shop-screen .hand-zone { grid-row: 3; grid-column: 2; }
-  .shop-screen .zone { min-height: 0; padding: 5px 7px; }
+  .shop-screen .zone { min-height: 0; display: flex; flex-direction: column; padding: 5px 7px; }
   .shop-screen .zone > header { min-height: 25px; margin-bottom: 2px; }
   .shop-screen .zone h2 { font-size: 11px; }.shop-screen .zone-step { width: 21px; height: 21px; flex-basis: 21px; font-size: 8px; }
   .shop-screen .zone-help,.shop-screen .zone header > span { display: none; }
@@ -431,7 +436,7 @@ button:disabled { opacity: .36; cursor: not-allowed; }
 }
 
 @media (orientation: landscape) and (max-height: 500px) {
-  .shop-screen .recruit-stage { grid-template-columns: minmax(0,1.1fr) minmax(360px,1fr); grid-template-rows: 38px minmax(0,1.2fr) minmax(0,.8fr); }
+  .shop-screen .recruit-stage { grid-template-columns: minmax(270px,1fr) minmax(0,1.15fr); grid-template-rows: 38px minmax(0,1.2fr) minmax(0,.8fr); }
   .shop-screen .board-strip { justify-content: center; gap: 2px; padding-inline: 1px; }
   .shop-screen .board-zone .board-minion,.shop-screen .board-zone .board-strip[data-count="7"] .board-minion { width: 48px; flex: 0 0 48px; min-height: 0; height: 100%; transform: none; margin: 0; }.shop-screen .board-zone .minion-portrait { width: 44px; height: 50px; flex-basis: 50px; border-width: 2px; transform: none; margin: 0; }.shop-screen .board-zone .minion-portrait > b { right: 1px; bottom: 3px; left: 1px; padding: 7px 1px 2px; font-size: 5.5px; }.shop-screen .board-zone .minion-tier { top: -4px; left: -3px; width: 17px; height: 17px; border-width: 1px; font-size: 6px; }.shop-screen .board-zone .minion-stats { right: -3px; bottom: -6px; left: -3px; }.shop-screen .board-zone .minion-stats strong { min-width: 19px; height: 19px; padding: 0 2px; border-width: 1px; font-size: 7px; }.shop-screen .board-zone .board-minion .keyword-row { display: none; }.shop-screen .board-zone .board-minion-actions { width: 46px; }.shop-screen .board-zone .board-minion-actions button { min-height: 27px; padding: 2px; font-size: 6px; }
   .shop-screen .hand-strip .game-card { flex-basis: 78px; height: 100%; min-height: 0; }
@@ -445,7 +450,7 @@ button:disabled { opacity: .36; cursor: not-allowed; }
 
 /* Compact landscape: keep the complete tavern offer visible instead of hiding later spells off-screen. */
 @media (orientation: landscape) and (max-height: 500px) {
-  .shop-screen .shop-zone .shop-strip { display: grid; align-items: stretch; gap: 4px; overflow: hidden; scroll-snap-type: none; }
+  .shop-screen .shop-zone .shop-strip { min-height: 0; height: auto; display: grid; align-items: stretch; flex: 1 1 auto; gap: 4px; overflow: hidden; scroll-snap-type: none; }
   .shop-screen .shop-zone .shop-strip[data-count="1"] { grid-template-columns: minmax(0,1fr); }
   .shop-screen .shop-zone .shop-strip[data-count="2"] { grid-template-columns: repeat(2,minmax(0,1fr)); }
   .shop-screen .shop-zone .shop-strip[data-count="3"] { grid-template-columns: repeat(3,minmax(0,1fr)); }
@@ -500,6 +505,8 @@ button:disabled { opacity: .36; cursor: not-allowed; }
   .combat-board[data-count="4"] .combat-card { width: min(112px,19vw); flex-basis: min(112px,19vw); }
   .combat-board[data-count="5"] .combat-card { width: min(106px,16vw); flex-basis: min(106px,16vw); }
   .combat-board[data-count="6"] .combat-card { width: min(98px,13.5vw); flex-basis: min(98px,13.5vw); }
+  .combat-board[data-count="1"] .combat-card > b,.combat-board[data-count="2"] .combat-card > b,.combat-board[data-count="3"] .combat-card > b,.combat-board[data-count="4"] .combat-card > b,.combat-board[data-count="5"] .combat-card > b { font-size: 8px; }
+  .combat-board[data-count="1"] .combat-card > div > span,.combat-board[data-count="2"] .combat-card > div > span,.combat-board[data-count="3"] .combat-card > div > span,.combat-board[data-count="4"] .combat-card > div > span,.combat-board[data-count="5"] .combat-card > div > span { min-width: 22px; height: 22px; font-size: 8px; }
   .combat-card > b { right: 14px; bottom: 20px; left: 14px; padding: 2px; font-size: 6.5px; }
   .combat-card > div { right: 2px; bottom: 1px; left: 2px; }
   .combat-card > div > span { min-width: 19px; height: 19px; font-size: 7px; }
