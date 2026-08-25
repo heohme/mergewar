@@ -1,15 +1,15 @@
-import { HEROES, MAX_BOARD, MINIONS, TRIBES } from "./data.js?v=30";
+import { HEROES, MAX_BOARD, MINIONS, TRIBES } from "./data.js?v=31";
 import {
   activateMinion, advanceRound, beginCombat, buyMinion, cancelPendingAction, canEndTurn,
   castSpell, chooseDiscover, createGame, gameResult, moveMinion, playCard, playerRank,
   reconcileBotUpgradeScaling, reconcileCardDefinitions, refreshShop, reorderMinion, resolvePendingTarget, resolveTriples, sellMinion, standings, toggleFreeze,
   startHeroPower, upgradeTavern,
-} from "./engine.js?v=30";
-import { attackVectorGeometry, battleFrameDelay, combatKeywordState, newCombatantIds } from "./battle-presentation.js?v=30";
+} from "./engine.js?v=31";
+import { attackVectorGeometry, battleFrameDelay, combatKeywordState, newCombatantIds } from "./battle-presentation.js?v=31";
 
 const app = document.querySelector("#app");
 const SAVE_KEY = "mergewar-save-v3";
-const CLIENT_VERSION = "prototype-v30";
+const CLIENT_VERSION = "prototype-v31";
 const MAX_BEHAVIOR_EVENTS = 300;
 let game = loadGame();
 let selectedBoardId = null;
@@ -60,6 +60,7 @@ function loadGame() {
       for (const owner of [saved.player, ...(saved.bots || [])]) {
         if (!owner) continue;
         owner.armor ??= 0; owner.goldCap ??= 10; owner.nextTurnGold ??= 0;
+        owner.turnGoldCap ??= Math.max(owner.gold || 0, Math.min(owner.goldCap, (saved.round || 1) + 2));
         owner.wins ??= 0; owner.losses ??= 0;
         owner.scheduledBoardBuffs ??= []; owner.pendingBattleBuffs ??= []; owner.combatSpells ??= {};
         owner.modifiers ??= {};
@@ -208,7 +209,7 @@ function renderTopbar() {
   return `<header class="topbar">
     <div class="round"><span>回合</span><b>${game.round}</b><i>/${game.maxRounds}</i></div>
     <div class="hero-cluster"><div class="hero"><img src="${game.hero.imageUrl}" alt=""><div><b>${game.hero.name}</b><small>${game.hero.tag}</small></div></div>${heroPowerControl()}</div>
-    <div class="resources"><span class="hp">♥ ${game.player.health}</span>${game.player.armor ? `<span class="armor">◆ ${game.player.armor}</span>` : ""}<span class="coin">● ${game.player.gold}/${game.player.goldCap || 10}</span><span># ${playerRank(game)}</span></div>
+    <div class="resources"><span class="hp">♥ ${game.player.health}</span>${game.player.armor ? `<span class="armor">◆ ${game.player.armor}</span>` : ""}<span class="coin" title="当前铸币 / 本回合铸币额度">● ${game.player.gold}/${game.player.turnGoldCap || Math.max(game.player.gold, Math.min(game.player.goldCap || 10, game.round + 2))}</span><span># ${playerRank(game)}</span></div>
     ${shopPhase ? `<button class="combat-button topbar-combat" data-action="combat" ${canEndTurn(game) ? "" : "disabled"}>${combatButtonLabel()}</button>` : ""}
     <button class="quiet-button" data-action="new-game">重新开始</button>
   </header>`;

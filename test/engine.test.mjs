@@ -32,6 +32,7 @@ assert.deepEqual([minion("BG20_101").attack, minion("BG20_101").health], [3, 4],
 
 const game = createGame(HEROES[0].id, fixed);
 assert.equal(game.player.gold, 3);
+assert.equal(game.player.turnGoldCap, 3, "首回合铸币显示应为3/3");
 assert.equal(game.player.shop.length, 4);
 assert.equal(game.player.shop.filter((item) => item.kind === "SPELL").length, 1, "每次刷新应额外提供一张酒馆法术");
 assert.equal(game.bots.length, 7);
@@ -78,6 +79,7 @@ for (let round = 1; round < 6; round += 1) {
 }
 assert.equal(roundSixGame.round, 6);
 assert.equal(roundSixGame.player.gold, 8, "第六回合应获得8枚铸币，10是铸币上限");
+assert.equal(roundSixGame.player.turnGoldCap, 8, "第六回合铸币显示应为8/8");
 
 const paidRefreshHero = HEROES.find((hero) => hero.power !== "FREE_REFRESH");
 const ordinarySpendingGame = createGame(paidRefreshHero.id, fixed);

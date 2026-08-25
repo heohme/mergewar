@@ -88,7 +88,7 @@ function addCardToHand(game, definition, golden = false) {
 export function createGame(heroId, rng = Math.random) {
   const hero = HEROES.find((item) => item.id === heroId) || HEROES[0];
   const bots = BOT_PROFILES.map((profile) => ({
-    ...clone(profile), health: 30, armor: 0, alive: true, tier: 1, board: [], hand: [], shop: [], gold: 3, goldCap: 10,
+    ...clone(profile), health: 30, armor: 0, alive: true, tier: 1, board: [], hand: [], shop: [], gold: 3, goldCap: 10, turnGoldCap: 3,
     wins: 0, losses: 0,
     upgradeCost: UPGRADE_BASE_COST[1], modifiers: baseModifiers(),
     nextTurnGold: 0, scheduledBoardBuffs: [], pendingBattleBuffs: [], combatSpells: {},
@@ -98,7 +98,7 @@ export function createGame(heroId, rng = Math.random) {
     version: 3, phase: "SHOP", round: 1, maxRounds: MAX_ROUNDS, hero,
     player: {
       id: "player", name: "你", hero: hero.name, health: 30, alive: true, tier: 1, gold: 3,
-      armor: 0, goldCap: 10,
+      armor: 0, goldCap: 10, turnGoldCap: 3,
       board: [], hand: [], shop: [], frozen: false, freeRefresh: hero.power === "FREE_REFRESH",
       freeRefreshes: 0, heroPowerUsed: false, upgradeCost: UPGRADE_BASE_COST[1], modifiers: baseModifiers(),
       nextTurnGold: 0, scheduledBoardBuffs: [], pendingBattleBuffs: [], combatSpells: {},
@@ -548,6 +548,7 @@ function majorityTribe(board) {
 
 function gainGold(owner, amount) {
   owner.gold = Math.min(owner.goldCap || 10, owner.gold + amount);
+  owner.turnGoldCap = Math.max(owner.turnGoldCap || 0, owner.gold);
 }
 
 function choice(id, name, text, imageUrl, extra = {}) {
@@ -1488,7 +1489,7 @@ function botFundUpgradeReplacement(bot) {
 }
 
 function recruitBot(bot, round, rng) {
-  bot.gold = Math.min(bot.goldCap || 10, round + 2 + (bot.nextTurnGold || 0)); bot.nextTurnGold = 0; bot.decisions = [];
+  bot.gold = Math.min(bot.goldCap || 10, round + 2 + (bot.nextTurnGold || 0)); bot.turnGoldCap = bot.gold; bot.nextTurnGold = 0; bot.decisions = [];
   fillBotShop(bot, rng);
   const desiredTier = Math.min(6, 1 + Math.floor(round / 2));
   if (bot.tier < desiredTier) upgradeBotTavern(bot, rng);
@@ -1537,6 +1538,7 @@ export function advanceRound(game, rng = Math.random) {
   const result = game.player.lastBattleResult;
   const wagerGold = (game.player.pendingOverconfidence || 0) * (result === "WIN" ? 3 : result === "TIE" ? 1 : 0);
   game.player.gold = Math.min(game.player.goldCap || 10, game.round + 2 + (game.player.nextTurnGold || 0) + wagerGold);
+  game.player.turnGoldCap = game.player.gold;
   game.player.nextTurnGold = 0; game.player.pendingOverconfidence = 0;
   (game.player.scheduledBoardBuffs || []).forEach((entry) => {
     for (let repeat = 0; repeat < entry.repeats; repeat += 1) game.player.board.forEach((item) => spellBuff(game, item, entry.attack, entry.health));

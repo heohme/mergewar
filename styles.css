@@ -441,3 +441,16 @@ button:disabled { opacity: .36; cursor: not-allowed; }
 @media (prefers-reduced-motion: reduce) {
   .battle-event-cue span,.shop-card { animation: none !important; transition: none !important; }
 }
+
+/* Compact landscape: keep the complete tavern offer visible instead of hiding later spells off-screen. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .shop-screen .shop-zone .shop-strip { display: grid; align-items: stretch; gap: 4px; overflow: hidden; scroll-snap-type: none; }
+  .shop-screen .shop-zone .shop-strip[data-count="1"] { grid-template-columns: minmax(0,1fr); }
+  .shop-screen .shop-zone .shop-strip[data-count="2"] { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .shop-screen .shop-zone .shop-strip[data-count="3"] { grid-template-columns: repeat(3,minmax(0,1fr)); }
+  .shop-screen .shop-zone .shop-strip[data-count="4"] { grid-template-columns: repeat(4,minmax(0,1fr)); }
+  .shop-screen .shop-zone .shop-strip[data-count="5"],
+  .shop-screen .shop-zone .shop-strip[data-count="6"] { grid-template: repeat(2,minmax(0,1fr)) / repeat(3,minmax(0,1fr)); }
+  .shop-screen .shop-zone .shop-strip[data-count="7"] { grid-template: repeat(2,minmax(0,1fr)) / repeat(4,minmax(0,1fr)); }
+  .shop-screen .shop-zone .shop-strip .game-card { width: 100%; min-width: 0; max-width: none; height: 100%; min-height: 0; max-height: none; }
+}
