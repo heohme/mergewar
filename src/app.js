@@ -1,15 +1,15 @@
-import { HEROES, MAX_BOARD, MINIONS, TRIBES } from "./data.js?v=29";
+import { HEROES, MAX_BOARD, MINIONS, TRIBES } from "./data.js?v=30";
 import {
   activateMinion, advanceRound, beginCombat, buyMinion, cancelPendingAction, canEndTurn,
   castSpell, chooseDiscover, createGame, gameResult, moveMinion, playCard, playerRank,
   reconcileBotUpgradeScaling, reconcileCardDefinitions, refreshShop, reorderMinion, resolvePendingTarget, resolveTriples, sellMinion, standings, toggleFreeze,
   startHeroPower, upgradeTavern,
-} from "./engine.js?v=29";
-import { attackVectorGeometry, battleFrameDelay, combatKeywordState, newCombatantIds } from "./battle-presentation.js?v=29";
+} from "./engine.js?v=30";
+import { attackVectorGeometry, battleFrameDelay, combatKeywordState, newCombatantIds } from "./battle-presentation.js?v=30";
 
 const app = document.querySelector("#app");
 const SAVE_KEY = "mergewar-save-v3";
-const CLIENT_VERSION = "prototype-v29";
+const CLIENT_VERSION = "prototype-v30";
 const MAX_BEHAVIOR_EVENTS = 300;
 let game = loadGame();
 let selectedBoardId = null;

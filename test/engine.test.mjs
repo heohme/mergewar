@@ -27,6 +27,8 @@ assert.deepEqual([1, 2, 3, 4, 5, 6].map((tier) => SPELLS.filter((item) => item.p
 assert.ok(SPELLS.every((item) => Number.isInteger(item.cost)), "每张法术都应有独立铸币消耗");
 assert.deepEqual([minion("BG32_170").attack, minion("BG32_170").health], [4, 2], "钢铁猎人的基础身材应为4/2");
 assert.deepEqual([minion("BG31_320").attack, minion("BG31_320").health], [2, 2], "坑谷矿工的基础身材应为2/2");
+assert.deepEqual([minion("BG28_303").attack, minion("BG28_303").health], [4, 4], "变装盗墓贼的基础身材应为4/4");
+assert.deepEqual([minion("BG20_101").attack, minion("BG20_101").health], [3, 4], "路霸野猪人的基础身材应为3/4");
 
 const game = createGame(HEROES[0].id, fixed);
 assert.equal(game.player.gold, 3);
@@ -67,6 +69,37 @@ assert.equal(refreshShop(refreshGame, fixed), true);
 assert.equal(refreshGame.player.gold, 3, "诺兹多姆第一次刷新免费");
 assert.equal(refreshShop(refreshGame, fixed), true);
 assert.equal(refreshGame.player.gold, 2);
+
+const roundSixGame = createGame(HEROES[0].id, fixed);
+for (let round = 1; round < 6; round += 1) {
+  roundSixGame.player.board = [createMinion({ id: `gold-check-${round}`, name: "经济测试", tribe: "NEUTRAL", tribes: ["NEUTRAL"], tier: 6, attack: 999, health: 999, keywords: [] })];
+  assert.ok(beginCombat(roundSixGame, fixed));
+  assert.equal(advanceRound(roundSixGame, fixed), true);
+}
+assert.equal(roundSixGame.round, 6);
+assert.equal(roundSixGame.player.gold, 8, "第六回合应获得8枚铸币，10是铸币上限");
+
+const paidRefreshHero = HEROES.find((hero) => hero.power !== "FREE_REFRESH");
+const ordinarySpendingGame = createGame(paidRefreshHero.id, fixed);
+ordinarySpendingGame.player.gold = 10;
+for (let refresh = 0; refresh < 7; refresh += 1) assert.equal(refreshShop(ordinarySpendingGame, fixed), true);
+assert.equal(ordinarySpendingGame.player.modifiers.refreshBuffs.length, 0, "没有空气亡魂时，花费铸币不应给商店随从叠加+8/+8");
+
+const airSpiritGame = createGame(paidRefreshHero.id, fixed);
+airSpiritGame.player.board = [createMinion(minion("BG34_858"), false, airSpiritGame.player.modifiers)];
+airSpiritGame.player.gold = 10;
+for (let refresh = 0; refresh < 7; refresh += 1) assert.equal(refreshShop(airSpiritGame, fixed), true);
+assert.deepEqual(airSpiritGame.player.modifiers.refreshBuffs, [{ attack: 8, health: 8, source: "BG34_858" }], "只有场上的空气亡魂应追踪7枚铸币并施放乘借东风");
+
+const legacyAirSpiritGame = createGame(HEROES[0].id, fixed);
+const legacyShopId = legacyAirSpiritGame.player.shop[0].instanceId;
+legacyAirSpiritGame.player.modifiers.airSpiritSpendFix = 0;
+legacyAirSpiritGame.player.modifiers.airSpent = 6;
+legacyAirSpiritGame.player.modifiers.refreshBuffs = [{ attack: 8, health: 8 }];
+assert.equal(reconcileCardDefinitions(legacyAirSpiritGame), true, "旧存档应清除被全局错误触发的乘借东风");
+assert.equal(legacyAirSpiritGame.player.modifiers.airSpiritSpendFix, 1);
+assert.equal(legacyAirSpiritGame.player.modifiers.refreshBuffs.length, 0);
+assert.notEqual(legacyAirSpiritGame.player.shop[0].instanceId, legacyShopId, "受污染的旧商店应重新生成");
 
 const upgradeGame = createGame(HEROES[0].id, fixed);
 upgradeGame.player.gold = 5;
@@ -122,6 +155,13 @@ const rallyDragon = createMinion(minion("BG29_888"));
 const weak = createMinion({ id: "weak", name: "木桩", tribe: "NEUTRAL", tribes: ["NEUTRAL"], tier: 1, attack: 0, health: 30, keywords: [] });
 const rallyBattle = simulateBattle([rallyDragon], [weak], null, fixed);
 assert.ok(rallyBattle.frames.some((frame) => frame.player.some((item) => item.baseId === "BG29_888" && item.attack >= 3)), "微光护卫者进击后应成长");
+
+const roadboarBattle = simulateBattle(
+  [createMinion(minion("BG20_101"))],
+  [createMinion({ id: "roadboar-target", name: "宝石木桩", tribe: "NEUTRAL", tribes: ["NEUTRAL"], tier: 1, attack: 0, health: 1, keywords: [] })],
+  null, fixed,
+);
+assert.equal(roadboarBattle.rewards.player.cards.filter((card) => card.id === "BG20_GEM").length, 2, "路霸野猪人每次进击应获取2张鲜血宝石");
 
 const paper = createMinion(minion("BG29_810"));
 const dragon = createMinion(minion("BG35_814"));

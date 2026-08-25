@@ -22,7 +22,7 @@ function baseModifiers() {
     bloodGemAttack: 0, bloodGemHealth: 0, beetleAttack: 0, beetleHealth: 0,
     automatonSummons: 0, mechDeathrattles: 0, firePitcher: 0, icePitcher: 0, airPitcher: 0,
     lobsterBuff: 0, beastSummonAttack: 0, refreshBuffs: [], refreshBloodGems: 0,
-    elementalPlays: 0, spellsCast: 0, airSpent: 0, chooseBothUsed: false,
+    elementalPlays: 0, spellsCast: 0, airSpent: 0, airSpiritSpendFix: 1, chooseBothUsed: false,
   };
 }
 
@@ -117,6 +117,25 @@ export function reconcileCardDefinitions(game) {
   let changed = false;
   for (const owner of [game?.player, ...(game?.bots || [])]) {
     if (!owner) continue;
+    const modifiers = owner.modifiers || (owner.modifiers = {});
+    if (modifiers.airSpiritSpendFix !== 1) {
+      let rebuildPlayerShop = false;
+      const legacyBuffs = (modifiers.refreshBuffs || []).filter((entry) =>
+        entry?.attack === 8 && entry?.health === 8 && !entry.source
+      );
+      if (legacyBuffs.length) {
+        modifiers.refreshBuffs = (modifiers.refreshBuffs || []).filter((entry) => !legacyBuffs.includes(entry));
+        rebuildPlayerShop = owner === game.player;
+      }
+      modifiers.airSpent = 0;
+      modifiers.airSpiritSpendFix = 1;
+      if (rebuildPlayerShop) {
+        owner.shop = buildShop(owner, Math.random);
+        game.messages ||= [];
+        game.messages.unshift("已修复错误叠加到酒馆随从的+8/+8效果，并重新生成了本次商店。");
+      }
+      changed = true;
+    }
     for (const zoneName of ["hand", "shop"]) {
       for (const card of owner[zoneName] || []) {
         if (card.baseId !== "BG36_200") continue;
@@ -194,11 +213,16 @@ function buildShop(owner, rng, mode = "NORMAL") {
 function spendGold(owner, amount) {
   owner.gold -= amount;
   const modifiers = ensureModifiers(owner);
-  modifiers.airSpent += amount;
-  while (modifiers.airSpent >= 7) {
-    modifiers.airSpent -= 7;
-    modifiers.refreshBuffs.push({ attack: 8, health: 8 });
-  }
+  modifiers.airSpent = 0;
+  (owner.board || []).filter((minion) => hasScript(minion, "BG34_858")).forEach((source) => {
+    source.airSpent = (source.airSpent || 0) + amount;
+    while (source.airSpent >= 7) {
+      source.airSpent -= 7;
+      for (let repeat = 0; repeat < (source.golden ? 2 : 1); repeat += 1) {
+        modifiers.refreshBuffs.push({ attack: 8, health: 8, source: "BG34_858" });
+      }
+    }
+  });
 }
 
 export function fillShop(game, forceNew = false, rng = Math.random, mode = "NORMAL") {
@@ -702,7 +726,7 @@ function triggerRecruitRally(game, source, rng) {
   else if (source.rally === "GET_CHROMATIC") for (let i = 0; i < mult; i += 1) addCardToHand(game, randomItem(CHROMATICS, rng));
   else if (source.rally === "MIGHTY_BREATH") for (let i = 0; i < mult; i += 1) applySpell(game, SPELLS.find((item) => item.id === "BG36_246"), null, rng);
   else if (source.rally === "BG33_886") applyBloodGem(game.player, source, mult);
-  else if (source.rally === "BG20_101") grantCards(game, SPELLS.find((item) => item.id === "BG20_GEM"), mult);
+  else if (source.rally === "BG20_101") grantCards(game, SPELLS.find((item) => item.id === "BG20_GEM"), 2 * mult);
   else if (source.rally === "BG20_104") game.player.board.filter((item) => item.instanceId !== source.instanceId).forEach((item) => applyBloodGem(game.player, item, mult));
   else if (source.rally === "BG33_883") applyBloodGem(game.player, source, 3 * mult);
   else if (source.rally === "BG33_885") { game.player.modifiers.bloodGemAttack += mult; game.player.modifiers.bloodGemHealth += mult; }
@@ -1165,7 +1189,7 @@ function triggerCombatRally(source, board, target, ctx, side, rng) {
       combatBuff(item, 2, 1, ctx, side); if (hasTribe(item, "DRAGON")) combatBuff(item, 2, 1, ctx, side); if (item.shield) combatBuff(item, 2, 1, ctx, side);
     });
   } else if (source.rally === "BG33_886") combatBuff(source, mult, mult, ctx, side);
-  else if (source.rally === "BG20_101") reward.cards.push({ type: "SPELL", id: "BG20_GEM" });
+  else if (source.rally === "BG20_101") for (let i = 0; i < 2 * mult; i += 1) reward.cards.push({ type: "SPELL", id: "BG20_GEM" });
   else if (source.rally === "BG20_104") board.filter((item) => item.instanceId !== source.instanceId).forEach((item) => combatBuff(item, mult, mult, ctx, side));
   else if (source.rally === "BG33_883") combatBuff(source, 3 * mult, 3 * mult, ctx, side);
   else if (source.rally === "BG33_885") { reward.modifiers.bloodGemAttack = (reward.modifiers.bloodGemAttack || 0) + mult; reward.modifiers.bloodGemHealth = (reward.modifiers.bloodGemHealth || 0) + mult; }
