@@ -1,0 +1,21 @@
+styles.css
+  s_a10de54ede7099::t_e1d633c7737906 871-889
+index.html
+  s_a10de54ede7099::t_e1d633c7737906 8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.5",
+  "base_commit_sha": "33b7c127766a7a69e3c7d1a3cc04e31eeb528922",
+  "prompts": {},
+  "sessions": {
+    "s_a10de54ede7099": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a03210-cdeb-74a3-a02a-8afa00d853d1",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "贺庆阳 <heqingyang@xiaohongshu.com>"
+    }
+  }
+}
