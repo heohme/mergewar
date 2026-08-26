@@ -868,3 +868,22 @@ button:disabled { opacity: .36; cursor: not-allowed; }
   .shop-screen .shop-zone .shop-strip .shop-card { width: auto; max-width: 48px; }
   .shop-screen .hand-strip .game-card { width: auto; flex-basis: auto; }
 }
+
+/* Let portrait offers define the shop height instead of stretching into unused space. */
+@media (min-width: 1001px) {
+  .shop-screen .recruit-stage {
+    grid-template-rows: 70px auto minmax(220px,1fr) minmax(160px,.75fr);
+  }
+}
+
+@media (min-width: 1001px) and (max-height: 900px) {
+  .shop-screen .recruit-stage {
+    grid-template-rows: 50px auto minmax(205px,1fr) minmax(150px,.75fr);
+  }
+}
+
+@media (orientation: landscape) and (min-width: 761px) and (max-width: 1179px) and (min-height: 501px) {
+  .shop-screen .recruit-stage {
+    grid-template-rows: 48px auto minmax(142px,1fr) minmax(108px,.75fr);
+  }
+}
