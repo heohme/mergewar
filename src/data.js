@@ -24,8 +24,13 @@ export const TRIBES = {
 
 export const HEROES = [
   { id: "TB_BaconShop_HERO_57", cardId: "TB_BaconShop_HERO_57", name: "诺兹多姆", imageUrl: art("TB_BaconShop_HERO_57"), tag: "洞察未来", description: "在你的回合开始时，获得一次免费的刷新。", power: "FREE_REFRESH" },
-  { id: "TB_BaconShop_HERO_41", cardId: "TB_BaconShop_HERO_41", name: "雷诺·杰克逊", imageUrl: art("TB_BaconShop_HERO_41"), tag: "要发财了！", description: "每局对战限一次。使一个友方随从变为金色。", power: "GOLDEN_TOUCH" },
+  { id: "TB_BaconShop_HERO_41", cardId: "TB_BaconShop_HERO_41", name: "雷诺·杰克逊", imageUrl: art("TB_BaconShop_HERO_41"), tag: "要发财了！", description: "每局对战限一次。使一个友方随从变为金色。", power: "GOLDEN_TOUCH", activation: { cost: 0, limit: "GAME", target: "FRIENDLY_MINION" } },
   { id: "TB_BaconShop_HERO_08", cardId: "TB_BaconShop_HERO_08", name: "伊利丹·怒风", imageUrl: art("TB_BaconShop_HERO_08"), tag: "左膀右臂", description: "战斗开始时：你最左边和最右边的随从获得+2/+1并立即攻击。", power: "EDGE_ASSAULT" },
+  { id: "TB_BaconShop_HERO_53", cardId: "TB_BaconShop_HERO_53", name: "伊瑟拉", imageUrl: art("TB_BaconShop_HERO_53"), tag: "梦境之门", description: "每当酒馆刷新时，总会额外提供一条龙。", power: "DREAM_PORTAL" },
+  { id: "TB_BaconShop_HERO_28", cardId: "TB_BaconShop_HERO_28", name: "永恒者托奇", imageUrl: art("TB_BaconShop_HERO_28"), tag: "时空酒馆", description: "发动（1）：刷新酒馆，其中包含两个高一级的随从。每回合限一次。", power: "TEMPORAL_TAVERN", activation: { cost: 1, limit: "TURN" } },
+  { id: "TB_BaconShop_HERO_74", cardId: "TB_BaconShop_HERO_74", name: "林地守护者欧穆", imageUrl: art("TB_BaconShop_HERO_74"), tag: "永远绽放", description: "在你升级酒馆后，获得2枚铸币。", power: "EVERBLOOM" },
+  { id: "TB_BaconShop_HERO_33", cardId: "TB_BaconShop_HERO_33", name: "馆长", imageUrl: art("TB_BaconShop_HERO_33"), tag: "馆长奇珍", description: "开局时拥有一个2/2并具有烈毒和全部随从类型的融合怪。", power: "CURATOR_AMALGAM" },
+  { id: "TB_BaconShop_HERO_49", cardId: "TB_BaconShop_HERO_49", name: "米尔豪斯·法力风暴", imageUrl: art("TB_BaconShop_HERO_49"), tag: "法力风暴", description: "购买随从和刷新消耗2枚铸币；升级酒馆额外需要1枚铸币。", power: "MANA_STORM" },
 ];
 
 export const UNDEAD = [
@@ -213,6 +218,7 @@ export const TOKENS = {
   sewer_rat: m("BG19_010", "下水道老鼠", "BEAST", 2, 3, 2, "亡语：召唤一只2/3并具有嘲讽的半甲龟。", { token: true, deathrattle: { summon: "turtle", count: 1 } }),
   turtle: m("BG19_010t", "半甲龟", "BEAST", 1, 2, 3, "嘲讽", { token: true, keywords: ["TAUNT"] }),
   sell_elemental: m("BGS_115t", "水滴元素", "ELEMENTAL", 1, 3, 3, "", { token: true, imageUrl: art("BGS_115") }),
+  curator_amalgam: m("BG_GIL_681", "融合怪", "NEUTRAL", 1, 2, 2, "烈毒。拥有全部随从类型。", { token: true, tribes: ["UNDEAD", "DRAGON", "MECHANICAL", "ELEMENTAL", "QUILBOAR", "BEAST"], keywords: ["VENOMOUS"] }),
 };
 
 export const CHROMATICS = [

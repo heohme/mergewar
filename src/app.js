@@ -1,15 +1,15 @@
-import { HEROES, MAX_BOARD, MINIONS, TRIBES } from "./data.js?v=33";
+import { HEROES, MAX_BOARD, MINIONS, TRIBES } from "./data.js?v=40";
 import {
-  activateMinion, advanceRound, beginCombat, buyMinion, cancelPendingAction, canEndTurn,
-  castSpell, chooseDiscover, createGame, gameResult, moveMinion, playCard, playerRank,
+  activateHeroPower, activateMinion, advanceRound, beginCombat, buyMinion, cancelPendingAction, canEndTurn,
+  cardPurchaseCost, castSpell, chooseDiscover, createGame, gameResult, moveMinion, playCard, playerRank,
   reconcileBotUpgradeScaling, reconcileCardDefinitions, refreshShop, reorderMinion, resolvePendingTarget, resolveTriples, sellMinion, standings, toggleFreeze,
-  startHeroPower, upgradeTavern,
-} from "./engine.js?v=33";
-import { attackVectorGeometry, battleFrameDelay, battleHeaderState, combatKeywordState, newCombatantIds } from "./battle-presentation.js?v=33";
+  startHeroPower, tavernRefreshCost, upgradeTavern,
+} from "./engine.js?v=40";
+import { attackVectorGeometry, battleFrameDelay, battleHeaderState, combatKeywordState, newCombatantIds } from "./battle-presentation.js?v=40";
 
 const app = document.querySelector("#app");
 const SAVE_KEY = "mergewar-save-v3";
-const CLIENT_VERSION = "prototype-v33";
+const CLIENT_VERSION = "prototype-v40";
 const MAX_BEHAVIOR_EVENTS = 300;
 let game = loadGame();
 let selectedBoardId = null;
@@ -57,6 +57,8 @@ function loadGame() {
     const saved = JSON.parse(localStorage.getItem(SAVE_KEY));
     if (saved?.playtest?.gameUploadStatus === "UPLOADING") saved.playtest.gameUploadStatus = "PENDING";
     if (saved?.version === 3) {
+      const currentHero = HEROES.find((hero) => hero.id === saved.hero?.id);
+      if (currentHero) saved.hero = currentHero;
       for (const owner of [saved.player, ...(saved.bots || [])]) {
         if (!owner) continue;
         owner.armor ??= 0; owner.goldCap ??= 10; owner.nextTurnGold ??= 0;
@@ -71,9 +73,11 @@ function loadGame() {
           ...owner.modifiers,
         });
       }
+      saved.player.heroPowerUsed ??= false;
+      saved.player.heroPowerUsedThisTurn ??= false;
       const difficultyHealed = reconcileBotUpgradeScaling(saved);
       const definitionsHealed = reconcileCardDefinitions(saved);
-      if (resolveTriples(saved) || difficultyHealed || definitionsHealed) localStorage.setItem(SAVE_KEY, JSON.stringify(saved));
+      if (resolveTriples(saved) || difficultyHealed || definitionsHealed || currentHero) localStorage.setItem(SAVE_KEY, JSON.stringify(saved));
     }
     return saved?.version === 3 ? saved : null;
   } catch { return null; }
@@ -142,7 +146,7 @@ function cardView(card, zone) {
   const selected = selectedBoardId === card.instanceId;
   const disabled = game.phase !== "SHOP";
   let controls = "";
-  const price = isSpell ? card.cost : 3;
+  const price = cardPurchaseCost(game, card);
   const cannotPay = card.healthCost ? game.player.health <= price : game.player.gold < price;
   if (zone === "shop") {
     const unavailable = disabled || cannotPay;
@@ -187,12 +191,19 @@ function renderStart() {
 }
 
 function heroPowerControl() {
-  const power = game.hero.power;
-  if (power === "GOLDEN_TOUCH") {
-    const ready = game.phase === "SHOP" && !game.player.heroPowerUsed && game.player.board.some((item) => !item.golden) && !game.pendingAction;
-    const state = game.player.heroPowerUsed ? "本局已使用" : game.pendingAction?.type === "HERO_POWER" ? "请选择目标" : game.player.board.length ? "选择一个随从" : "先打出随从";
-    return `<button class="hero-power-control ${game.pendingAction?.type === "HERO_POWER" ? "active" : ""}" data-action="hero-power-select" ${ready ? "" : "disabled"}>
-      <span>英雄技能</span><b>${game.hero.tag}</b><small>${state}</small>
+  const activation = game.hero.activation;
+  if (activation) {
+    const used = activation.limit === "GAME" ? game.player.heroPowerUsed : game.player.heroPowerUsedThisTurn;
+    const pending = game.pendingAction?.type === "HERO_POWER";
+    const hasTarget = !activation.target || (game.hero.power === "GOLDEN_TOUCH" && game.player.board.some((item) => !item.golden));
+    const ready = game.phase === "SHOP" && !used && !game.pendingAction && hasTarget && game.player.gold >= (activation.cost || 0);
+    const state = used ? (activation.limit === "GAME" ? "本局已使用" : "本回合已使用")
+      : pending ? "请选择目标"
+      : game.player.gold < (activation.cost || 0) ? "铸币不足"
+      : activation.target && !hasTarget ? "先打出随从"
+      : activation.target ? "选择一个随从" : game.hero.description;
+    return `<button class="hero-power-control ${pending ? "active" : ""}" data-action="${activation.target ? "hero-power-select" : "hero-power-use"}" ${ready ? "" : "disabled"}>
+      <span>英雄技能 · ${activation.cost || 0}</span><b>${game.hero.tag}</b><small>${state}</small>
     </button>`;
   }
   return `<div class="hero-power-control passive"><span>英雄技能 · 被动</span><b>${game.hero.tag}</b><small>${game.hero.description}</small></div>`;
@@ -239,7 +250,7 @@ function renderShop() {
           <div class="enemy-mini">${opponent.board.map((item) => `<span title="${item.name}"><img src="${item.imageUrl}" alt=""><i>${item.attack}/${item.health}</i></span>`).join("")}</div></div>
         <section class="zone shop-zone" data-drop-zone="shop" data-drop-label="松开出售 · +1铸币"><header><div class="zone-heading"><span class="zone-step">1</span><div><small>购买区 · 从这里挑选卡牌</small><h2>${game.player.tier}级酒馆商店 ${shopBuffStatus()}</h2></div></div><div class="shop-actions">
           <button data-action="upgrade" ${game.player.tier >= 6 || game.player.gold < game.player.upgradeCost ? "disabled" : ""}>升级 · ${game.player.tier >= 6 ? "满级" : game.player.upgradeCost}</button>
-          <button data-action="refresh" ${game.player.gold < (game.player.freeRefresh || game.player.freeRefreshes ? 0 : 1) ? "disabled" : ""}>刷新 · ${game.player.freeRefresh || game.player.freeRefreshes ? "免费" : 1}</button>
+          <button data-action="refresh" ${game.player.gold < tavernRefreshCost(game) ? "disabled" : ""}>刷新 · ${tavernRefreshCost(game) ? tavernRefreshCost(game) : "免费"}</button>
           <button data-action="freeze" class="${game.player.frozen ? "active" : ""}">${game.player.frozen ? "已冻结" : "冻结"}</button>
         </div></header><div class="zone-help">购买后进入手牌 · 将场上随从拖到这里出售</div><div class="card-strip shop-strip" data-count="${game.player.shop.length}">${game.player.shop.map((item) => cardView(item, "shop")).join("") || `<div class="empty"><b>商店已买空</b><span>刷新后会补充新的随从和法术</span></div>`}</div></section>
         <section class="zone board-zone" data-drop-zone="board" data-drop-label="松开上场"><header><div class="zone-heading"><span class="zone-step">2</span><div><small>上阵区 · 战斗时自动出战</small><h2>你的战队 <em>${game.player.board.length}/${MAX_BOARD}</em></h2></div></div><span>${selectedBoardId ? "再点一张随从可交换位置" : "拖动随从调整攻击顺序"}</span></header>
@@ -564,7 +575,7 @@ app.addEventListener("click", (event) => {
   const actions = {
     resume: () => {},
     buy: () => buyMinion(game, id), play: () => playCard(game, id), sell: () => sellMinion(game, id),
-    activate: () => activateMinion(game, id), "hero-power-select": () => startHeroPower(game),
+    activate: () => activateMinion(game, id), "hero-power-select": () => startHeroPower(game), "hero-power-use": () => activateHeroPower(game),
     upgrade: () => upgradeTavern(game), refresh: () => refreshShop(game), freeze: () => toggleFreeze(game),
     discover: () => chooseDiscover(game, id), "cancel-target": () => cancelPendingAction(game),
     "normal-play": () => resolvePendingTarget(game, null), inspect: () => { selectedCard = findCard(id); },

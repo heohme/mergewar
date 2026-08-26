@@ -100,13 +100,15 @@ export function createGame(heroId, rng = Math.random) {
       id: "player", name: "你", hero: hero.name, health: 30, alive: true, tier: 1, gold: 3,
       armor: 0, goldCap: 10, turnGoldCap: 3,
       board: [], hand: [], shop: [], frozen: false, freeRefresh: hero.power === "FREE_REFRESH",
-      freeRefreshes: 0, heroPowerUsed: false, upgradeCost: UPGRADE_BASE_COST[1], modifiers: baseModifiers(),
+      freeRefreshes: 0, heroPowerUsed: false, heroPowerUsedThisTurn: false,
+      upgradeCost: UPGRADE_BASE_COST[1] + (hero.power === "MANA_STORM" ? 1 : 0), modifiers: baseModifiers(),
       nextTurnGold: 0, scheduledBoardBuffs: [], pendingBattleBuffs: [], combatSpells: {},
     },
     bots, currentOpponent: null, pendingDiscover: null, pendingAction: null, battle: null,
     messages: ["手牌随从可拖到战队上场；场上随从可拖回酒馆出售。"],
     stats: { refreshes: 0, triples: 0, wins: 0, losses: 0, spells: 0 },
   };
+  if (hero.power === "CURATOR_AMALGAM") game.player.board.push(createMinion(TOKENS.curator_amalgam, false, game.player.modifiers));
   bots.forEach((bot) => recruitBot(bot, 1, rng));
   fillShop(game, true, rng);
   chooseOpponent(game, rng);
@@ -182,6 +184,16 @@ export function shopSize(tier) { return [0, 3, 4, 4, 5, 5, 6][tier] || 6; }
 const availableMinions = (tier) => MINIONS.filter((minion) => minion.tier <= tier && !minion.token);
 const availableSpells = (tier) => SPELLS.filter((spell) => spell.pool && spell.tier <= tier);
 
+export function tavernRefreshCost(game) {
+  if (game.player.freeRefresh || game.player.freeRefreshes > 0) return 0;
+  return game.hero.power === "MANA_STORM" ? 2 : 1;
+}
+
+export function cardPurchaseCost(game, card) {
+  if (card.kind === "SPELL") return card.cost;
+  return game.hero.power === "MANA_STORM" ? 2 : 3;
+}
+
 function createShopMinion(owner, definition) {
   const minion = createMinion(definition, false, owner.modifiers);
   const tribeBonus = (minion.tribes || [minion.tribe]).reduce((total, tribe) => total + (owner.modifiers.shopTribeBuffs?.[tribe] || 0), 0);
@@ -199,6 +211,13 @@ function buildShop(owner, rng, mode = "NORMAL") {
     return Array.from({ length: Math.min(7, minionCount + 1) }, () => createShopMinion(owner, randomItem(pool.length ? pool : availableMinions(owner.tier), rng)));
   }
   const minions = Array.from({ length: minionCount }, () => createShopMinion(owner, randomItem(availableMinions(owner.tier), rng)));
+  if (mode === "TEMPORAL_TAVERN") {
+    const higherTier = Math.min(6, owner.tier + 1);
+    const higherPool = MINIONS.filter((item) => item.tier === higherTier && !item.token);
+    for (let index = 0; index < Math.min(2, minions.length); index += 1) {
+      minions[index] = createShopMinion(owner, randomItem(higherPool.length ? higherPool : availableMinions(owner.tier), rng));
+    }
+  }
   owner.modifiers.refreshBuffs.forEach((entry) => {
     const target = randomItem(minions, rng);
     if (target) buff(target, entry.attack || 0, entry.health || 0);
@@ -229,16 +248,25 @@ export function fillShop(game, forceNew = false, rng = Math.random, mode = "NORM
   const player = game.player;
   if (forceNew || !player.frozen) player.shop = [];
   if (!player.shop.length) player.shop = buildShop(player, rng, mode);
+  if (game.hero.power === "DREAM_PORTAL" && mode === "NORMAL" && player.shop.length < 7) {
+    const dragonPool = DRAGONS.filter((item) => item.tier <= player.tier && !item.token);
+    const dragon = randomItem(dragonPool, rng);
+    if (dragon) {
+      const spellIndex = player.shop.findIndex((item) => item.kind === "SPELL");
+      player.shop.splice(spellIndex < 0 ? player.shop.length : spellIndex, 0, createShopMinion(player, dragon));
+    }
+  }
   player.frozen = false;
 }
 
 export function refreshShop(game, rng = Math.random) {
   if (game.phase !== "SHOP" || game.pendingAction) return false;
-  const free = game.player.freeRefresh || game.player.freeRefreshes > 0;
-  if (!free && game.player.gold < 1) return false;
+  const cost = tavernRefreshCost(game);
+  const free = cost === 0;
+  if (!free && game.player.gold < cost) return false;
   if (game.player.freeRefresh) game.player.freeRefresh = false;
   else if (game.player.freeRefreshes > 0) game.player.freeRefreshes -= 1;
-  else spendGold(game.player, 1);
+  else spendGold(game.player, cost);
   game.player.shop = [];
   fillShop(game, true, rng);
   game.stats.refreshes += 1;
@@ -255,7 +283,7 @@ export function buyMinion(game, instanceId) {
   const index = player.shop.findIndex((item) => item.instanceId === instanceId);
   if (index < 0) return false;
   const card = player.shop[index];
-  const cost = card.kind === "SPELL" ? card.cost : 3;
+  const cost = cardPurchaseCost(game, card);
   const canPay = card.healthCost ? player.health > cost : player.gold >= cost;
   if (game.phase !== "SHOP" || game.pendingAction || !canPay || player.hand.length >= MAX_HAND) return false;
   player.shop.splice(index, 1);
@@ -821,26 +849,53 @@ export function reorderMinion(game, instanceId, targetIndex) {
 export function upgradeTavern(game) {
   const p = game.player;
   if (game.phase !== "SHOP" || game.pendingAction || p.tier >= 6 || p.gold < p.upgradeCost) return false;
-  spendGold(p, p.upgradeCost); p.tier += 1; p.upgradeCost = UPGRADE_BASE_COST[p.tier] ?? 0;
-  message(game, `酒馆升级到${p.tier}级。`); return true;
+  spendGold(p, p.upgradeCost); p.tier += 1;
+  p.upgradeCost = (UPGRADE_BASE_COST[p.tier] ?? 0) + (game.hero.power === "MANA_STORM" && p.tier < 6 ? 1 : 0);
+  if (game.hero.power === "EVERBLOOM") gainGold(p, 2);
+  message(game, `酒馆升级到${p.tier}级。${game.hero.power === "EVERBLOOM" ? "永远绽放使你获得2枚铸币。" : ""}`); return true;
 }
 
 export function useHeroPower(game, instanceId) {
   const p = game.player;
-  if (game.phase !== "SHOP" || game.hero.power !== "GOLDEN_TOUCH" || p.heroPowerUsed) return false;
-  const minion = p.board.find((item) => item.instanceId === instanceId);
-  if (!minion || minion.golden) return false;
-  minion.golden = true; buff(minion, minion.attack, minion.maxHealth); p.heroPowerUsed = true;
-  message(game, `${minion.name}变为了金色。`); return true;
+  const activation = game.hero.activation;
+  const used = activation?.limit === "GAME" ? p.heroPowerUsed : p.heroPowerUsedThisTurn;
+  if (game.phase !== "SHOP" || !activation?.target || used || p.gold < (activation.cost || 0)) return false;
+  if (game.hero.power === "GOLDEN_TOUCH") {
+    const minion = p.board.find((item) => item.instanceId === instanceId);
+    if (!minion || minion.golden) return false;
+    if (activation.cost) spendGold(p, activation.cost);
+    minion.golden = true; buff(minion, minion.attack, minion.maxHealth); p.heroPowerUsed = true;
+    message(game, `${minion.name}变为了金色。`); return true;
+  }
+  return false;
 }
 
 export function startHeroPower(game) {
   const p = game.player;
-  if (game.phase !== "SHOP" || game.pendingAction || game.hero.power !== "GOLDEN_TOUCH" || p.heroPowerUsed) return false;
-  const targets = p.board.filter((item) => !item.golden);
+  const activation = game.hero.activation;
+  const used = activation?.limit === "GAME" ? p.heroPowerUsed : p.heroPowerUsedThisTurn;
+  if (game.phase !== "SHOP" || game.pendingAction || !activation?.target || used || p.gold < (activation.cost || 0)) return false;
+  const targets = game.hero.power === "GOLDEN_TOUCH" ? p.board.filter((item) => !item.golden) : [];
   if (!targets.length) return false;
   game.pendingAction = { type: "HERO_POWER", validIds: targets.map((item) => item.instanceId) };
   return "PENDING";
+}
+
+export function activateHeroPower(game, rng = Math.random) {
+  const p = game.player;
+  const activation = game.hero.activation;
+  const used = activation?.limit === "GAME" ? p.heroPowerUsed : p.heroPowerUsedThisTurn;
+  if (game.phase !== "SHOP" || game.pendingAction || !activation || activation.target || used || p.gold < (activation.cost || 0)) return false;
+  if (game.hero.power === "TEMPORAL_TAVERN") {
+    if (activation.cost) spendGold(p, activation.cost);
+    p.shop = [];
+    fillShop(game, true, rng, "TEMPORAL_TAVERN");
+    p.heroPowerUsedThisTurn = true;
+    game.stats.refreshes += 1;
+    message(game, "时空酒馆刷新了酒馆，并带来了两个高一级的随从。");
+    return true;
+  }
+  return false;
 }
 
 function checkTriples(game, baseId) {
@@ -1556,6 +1611,7 @@ export function advanceRound(game, rng = Math.random) {
   game.player.hand.forEach((item) => { if (item.lockedTurns > 0) item.lockedTurns -= 1; });
   game.player.upgradeCost = game.player.tier < 6 ? Math.max(0, game.player.upgradeCost - 1) : 0;
   game.player.freeRefresh = game.hero.power === "FREE_REFRESH";
+  game.player.heroPowerUsedThisTurn = false;
   game.player.modifiers.chooseBothUsed = false;
   game.player.board.forEach((item) => {
     item.activatedThisTurn = false;

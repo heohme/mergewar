@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import { BEASTS, CHROMATICS, DRAGONS, ELEMENTALS, HEROES, MECHS, MINIONS, NEUTRALS, QUILBOAR, SPELLS, UNDEAD } from "../src/data.js";
 import {
-  activateMinion, advanceRound, beginCombat, buyMinion, castSpell, createGame,
+  activateHeroPower, activateMinion, advanceRound, beginCombat, buyMinion, cardPurchaseCost, castSpell, createGame,
   chooseDiscover, createMinion, createSpell, gameResult, playCard, playerRank, refreshShop, resolvePendingTarget,
-  reconcileBotUpgradeScaling, reconcileCardDefinitions, resolveTriples, sellMinion, simulateBattle, startHeroPower, upgradeTavern,
+  reconcileBotUpgradeScaling, reconcileCardDefinitions, resolveTriples, sellMinion, simulateBattle, startHeroPower, tavernRefreshCost, upgradeTavern,
 } from "../src/engine.js";
 
 const fixed = () => 0.17;
@@ -18,6 +18,8 @@ assert.equal(QUILBOAR.length, 22, "应包含当前快照全部22张野猪人");
 assert.equal(BEASTS.length, 21, "应包含当前快照全部21张野兽");
 assert.equal(NEUTRALS.length, 23, "应包含当前快照全部23张中立随从");
 assert.equal(MINIONS.length, 152, "完整六种族与中立卡池应有152张随从");
+assert.equal(HEROES.length, 8, "英雄池应包含原有3名和新增5名英雄");
+assert.equal(new Set(HEROES.map((hero) => hero.id)).size, HEROES.length, "英雄定义ID不应重复");
 assert.equal(new Set(MINIONS.map((item) => item.id)).size, MINIONS.length, "随从定义ID不应重复");
 assert.deepEqual([1, 2, 3, 4, 5, 6].map((tier) => UNDEAD.filter((item) => item.tier === tier).length), [3, 3, 5, 4, 2, 4]);
 assert.deepEqual([1, 2, 3, 4, 5, 6].map((tier) => DRAGONS.filter((item) => item.tier === tier).length), [2, 3, 5, 4, 4, 4]);
@@ -331,6 +333,46 @@ assert.equal(heroPowerGame.pendingAction.type, "HERO_POWER");
 assert.equal(resolvePendingTarget(heroPowerGame, heroPowerGame.player.board[0].instanceId, fixed), true);
 assert.equal(heroPowerGame.player.board[0].golden, true, "点金目标应正确变为金色");
 assert.equal(startHeroPower(heroPowerGame), false, "点金术每局只能使用一次");
+
+const yseraGame = createGame("TB_BaconShop_HERO_53", fixed);
+assert.equal(yseraGame.player.shop.length, 5, "伊瑟拉的酒馆应比正常酒馆额外提供一条龙");
+assert.ok(yseraGame.player.shop.some((card) => card.kind === "MINION" && card.tribes.includes("DRAGON")), "梦境之门应稳定加入龙");
+assert.equal(refreshShop(yseraGame, fixed), true);
+assert.equal(yseraGame.player.shop.length, 5, "手动刷新后梦境之门仍应额外提供一条龙");
+
+const tokiGame = createGame("TB_BaconShop_HERO_28", fixed);
+assert.equal(activateHeroPower(tokiGame, fixed), true, "托奇应能发动时空酒馆");
+assert.equal(tokiGame.player.gold, 2, "时空酒馆应消耗1枚铸币");
+assert.equal(tokiGame.player.shop.filter((card) => card.kind === "MINION" && card.tier === 2).length, 2, "时空酒馆应提供两个高一级随从");
+assert.equal(activateHeroPower(tokiGame, fixed), false, "时空酒馆每回合只能发动一次");
+tokiGame.phase = "COMBAT"; tokiGame.player.lastBattleResult = "TIE";
+assert.equal(advanceRound(tokiGame, fixed), true);
+assert.equal(tokiGame.player.heroPowerUsedThisTurn, false, "新回合应重置托奇英雄技能");
+
+const omuGame = createGame("TB_BaconShop_HERO_74", fixed);
+omuGame.player.gold = 5;
+assert.equal(upgradeTavern(omuGame), true, "欧穆应能正常升级酒馆");
+assert.equal(omuGame.player.gold, 2, "欧穆支付5枚升级后应返还2枚铸币");
+
+const curatorGame = createGame("TB_BaconShop_HERO_33", fixed);
+assert.equal(curatorGame.player.board.length, 1, "馆长开局应拥有融合怪");
+assert.deepEqual([curatorGame.player.board[0].attack, curatorGame.player.board[0].health], [2, 2]);
+assert.ok(curatorGame.player.board[0].keywords.includes("VENOMOUS"), "馆长融合怪应具有烈毒");
+assert.ok(["UNDEAD", "DRAGON", "MECHANICAL", "ELEMENTAL", "QUILBOAR", "BEAST"].every((tribe) => curatorGame.player.board[0].tribes.includes(tribe)), "馆长融合怪应拥有全部已实现种族");
+
+const millhouseGame = createGame("TB_BaconShop_HERO_49", fixed);
+const millhouseMinion = millhouseGame.player.shop.find((card) => card.kind === "MINION");
+assert.equal(cardPurchaseCost(millhouseGame, millhouseMinion), 2, "米尔豪斯购买随从应只需2枚铸币");
+millhouseGame.player.gold = 2;
+assert.equal(buyMinion(millhouseGame, millhouseMinion.instanceId), true);
+assert.equal(millhouseGame.player.gold, 0);
+millhouseGame.player.gold = 1;
+assert.equal(tavernRefreshCost(millhouseGame), 2, "米尔豪斯刷新酒馆应需要2枚铸币");
+assert.equal(refreshShop(millhouseGame, fixed), false);
+millhouseGame.player.gold = 2;
+assert.equal(refreshShop(millhouseGame, fixed), true);
+assert.equal(millhouseGame.player.gold, 0);
+assert.equal(millhouseGame.player.upgradeCost, 6, "米尔豪斯升级酒馆应额外需要1枚铸币");
 
 const effectTripleGame = createGame(HEROES[0].id, fixed);
 const survivorDefinition = minion("BG35_814");
