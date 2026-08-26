@@ -779,3 +779,92 @@ button:disabled { opacity: .36; cursor: not-allowed; }
   .game-over .feedback-error { min-height: 12px; font-size: 7px; }
   .game-over .restart-button { min-height: 31px; margin-top: 6px; padding: 6px 15px; font-size: 8px; }
 }
+
+/* Portrait card sizing v38: shop and hand cards share a stable 4:5 silhouette. */
+.shop-screen .shop-zone .shop-strip,
+.shop-screen .hand-strip { align-items: flex-start; }
+.shop-screen .shop-zone .shop-card,
+.shop-screen .hand-strip .game-card {
+  width: clamp(72px,8vw,120px);
+  height: auto;
+  min-height: 0;
+  max-width: 120px;
+  max-height: none;
+  flex: 0 0 clamp(72px,8vw,120px);
+  aspect-ratio: 4 / 5;
+}
+.shop-screen .hand-strip .game-card {
+  width: clamp(64px,6.5vw,96px);
+  max-width: 96px;
+  flex-basis: clamp(64px,6.5vw,96px);
+}
+
+@media (orientation: landscape) and (min-width: 761px) and (max-width: 1179px) and (min-height: 501px) {
+  .shop-screen .shop-zone .shop-card {
+    width: clamp(78px,calc((100vw - 112px) / 7),110px);
+    flex-basis: clamp(78px,calc((100vw - 112px) / 7),110px);
+  }
+  .shop-screen .hand-strip .game-card {
+    width: auto;
+    height: 100%;
+    max-height: 100%;
+    flex-basis: auto;
+  }
+}
+
+@media (orientation: portrait) and (max-width: 760px) {
+  .shop-screen .shop-zone .shop-card {
+    width: auto;
+    height: 100%;
+    max-height: 100%;
+    flex-basis: auto;
+  }
+  .shop-screen .hand-strip .game-card {
+    width: auto;
+    height: 100%;
+    max-height: 100%;
+    flex-basis: auto;
+  }
+}
+
+@media (orientation: landscape) and (max-width: 900px) and (max-height: 500px) {
+  .shop-screen .shop-zone .shop-strip,
+  .shop-screen .shop-zone .shop-strip[data-count] {
+    display: grid;
+    grid-template-rows: minmax(0,1fr);
+    grid-template-columns: repeat(var(--shop-count,7),minmax(0,58px));
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+  }
+  .shop-screen .shop-zone .shop-strip[data-count="1"] { --shop-count: 1; }
+  .shop-screen .shop-zone .shop-strip[data-count="2"] { --shop-count: 2; }
+  .shop-screen .shop-zone .shop-strip[data-count="3"] { --shop-count: 3; }
+  .shop-screen .shop-zone .shop-strip[data-count="4"] { --shop-count: 4; }
+  .shop-screen .shop-zone .shop-strip[data-count="5"] { --shop-count: 5; }
+  .shop-screen .shop-zone .shop-strip[data-count="6"] { --shop-count: 6; }
+  .shop-screen .shop-zone .shop-strip[data-count="7"] { --shop-count: 7; }
+  .shop-screen .shop-zone .shop-strip .shop-card {
+    width: auto;
+    height: 100%;
+    min-height: 0;
+    max-width: 58px;
+    max-height: 100%;
+    aspect-ratio: 4 / 5;
+  }
+  .shop-screen .hand-strip .game-card {
+    width: auto;
+    height: 100%;
+    min-height: 0;
+    max-height: 100%;
+    flex-basis: auto;
+    aspect-ratio: 4 / 5;
+  }
+}
+
+@media (orientation: landscape) and (max-width: 900px) and (max-height: 360px) {
+  .shop-screen .shop-zone .shop-strip,
+  .shop-screen .shop-zone .shop-strip[data-count] { grid-template-columns: repeat(var(--shop-count,7),minmax(0,48px)); }
+  .shop-screen .shop-zone .shop-strip .shop-card { width: auto; max-width: 48px; }
+  .shop-screen .hand-strip .game-card { width: auto; flex-basis: auto; }
+}
