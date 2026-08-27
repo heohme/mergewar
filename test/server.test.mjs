@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { normalizeCompletion, normalizeSubmission, summarizeSubmissions } from "../functions-shared/playtests.js";
+import { normalizeBugReport, normalizeCompletion, normalizeSubmission, summarizeSubmissions } from "../functions-shared/playtests.js";
 
 const sample = {
   game: {
@@ -40,6 +40,21 @@ assert.deepEqual(normalizeSubmission({ ...sample, feedback: { funRating: 3, comm
 const completion = normalizeCompletion({ game: sample.game });
 assert.equal(completion.game.sessionId, "session-test-1");
 assert.equal(completion.feedback, undefined);
+
+const bugReport = normalizeBugReport({ report: {
+  sessionId: "session-test-1", clientVersion: "test", heroId: "hero-1", heroName: "测试英雄",
+  round: 4, phase: "SHOP", description: "拖动鲜血宝石后没有生效", includeLogs: true,
+  behaviorLog: sample.game.behaviorLog,
+  snapshot: { health: 23, gold: 4, goldLimit: 6, tier: 3, rank: 2, board: sample.game.finalBoard, message: "施放了鲜血宝石。" },
+  viewport: { width: 616, height: 414 },
+} });
+assert.equal(bugReport.schemaVersion, 1);
+assert.equal(bugReport.report.description, "拖动鲜血宝石后没有生效");
+assert.equal(bugReport.report.behaviorLog.length, 2);
+assert.equal(bugReport.report.snapshot.board[0].name, "测试随从");
+assert.deepEqual(bugReport.report.viewport, { width: 616, height: 414 });
+assert.equal(normalizeBugReport({ report: { ...bugReport.report, includeLogs: false } }).report.behaviorLog.length, 0, "取消日志选项后不应上传行为日志");
+assert.throws(() => normalizeBugReport({ report: { ...bugReport.report, description: "" } }), /请填写问题描述/);
 
 const second = normalizeSubmission({
   ...sample,

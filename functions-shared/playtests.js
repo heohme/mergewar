@@ -28,6 +28,35 @@ function normalizeBehaviorLog(input) {
   });
 }
 
+const normalizeCardRefs = (input, limit) => Array.isArray(input) ? input.slice(0, limit).flatMap((card) => {
+  if (!card || typeof card !== "object" || Array.isArray(card)) return [];
+  return [{
+    id: cleanText(card.id, 80),
+    name: cleanText(card.name, 80),
+    attack: nonNegativeInteger(card.attack),
+    health: nonNegativeInteger(card.health),
+    golden: Boolean(card.golden),
+  }];
+}) : [];
+
+function normalizeBugSnapshot(input) {
+  const snapshot = input && typeof input === "object" && !Array.isArray(input) ? input : {};
+  return {
+    health: nonNegativeInteger(snapshot.health),
+    armor: nonNegativeInteger(snapshot.armor),
+    gold: Math.min(20, nonNegativeInteger(snapshot.gold)),
+    goldLimit: Math.min(20, nonNegativeInteger(snapshot.goldLimit)),
+    tier: Math.min(6, nonNegativeInteger(snapshot.tier)),
+    rank: Math.min(8, nonNegativeInteger(snapshot.rank)),
+    board: normalizeCardRefs(snapshot.board, 7),
+    hand: normalizeCardRefs(snapshot.hand, 10),
+    shop: normalizeCardRefs(snapshot.shop, 7),
+    message: cleanText(snapshot.message, 300),
+    battleFrame: nonNegativeInteger(snapshot.battleFrame),
+    battleFrames: nonNegativeInteger(snapshot.battleFrames),
+  };
+}
+
 export function normalizeGame(input) {
   const game = requireObject(input);
   const sessionId = cleanText(game.sessionId, 100);
@@ -82,6 +111,36 @@ export function normalizeCompletion(input) {
 export function normalizeSubmission(input) {
   const body = requireObject(input);
   return { schemaVersion: 3, game: normalizeGame(body.game), feedback: normalizeFeedback(body.feedback) };
+}
+
+export function normalizeBugReport(input) {
+  const body = requireObject(input);
+  const report = requireObject(body.report ?? body);
+  const sessionId = cleanText(report.sessionId, 100);
+  const description = cleanText(report.description, 500);
+  if (!sessionId) throw new Error("缺少本局编号");
+  if (!description) throw new Error("请填写问题描述");
+  if (!Number.isInteger(report.round) || report.round < 1 || report.round > 10) throw new Error("回合数必须在1到10之间");
+  const includeLogs = report.includeLogs !== false;
+  return {
+    schemaVersion: 1,
+    report: {
+      sessionId,
+      clientVersion: cleanText(report.clientVersion, 40) || "unknown",
+      heroId: cleanText(report.heroId, 80),
+      heroName: cleanText(report.heroName, 80),
+      round: report.round,
+      phase: cleanText(report.phase, 20),
+      description,
+      includeLogs,
+      behaviorLog: includeLogs ? normalizeBehaviorLog(report.behaviorLog).slice(-100) : [],
+      snapshot: normalizeBugSnapshot(report.snapshot),
+      viewport: {
+        width: Math.min(10000, nonNegativeInteger(report.viewport?.width)),
+        height: Math.min(10000, nonNegativeInteger(report.viewport?.height)),
+      },
+    },
+  };
 }
 
 export function summarizeSubmissions(entries) {

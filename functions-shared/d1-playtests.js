@@ -52,3 +52,21 @@ export async function upsertFeedback(database, game, feedback) {
   ).run();
   return { id: row.id, duplicate: result.meta?.changes === 0 };
 }
+
+export async function insertBugReport(database, report) {
+  const id = crypto.randomUUID();
+  const now = new Date().toISOString();
+  await database.prepare(`
+    INSERT INTO bug_reports (
+      id, session_id, schema_version, client_version, hero_id, hero_name,
+      round, phase, description, include_logs, behavior_log, state_snapshot,
+      viewport_width, viewport_height, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(
+    id, report.sessionId, 1, report.clientVersion, report.heroId, report.heroName,
+    report.round, report.phase, report.description, report.includeLogs ? 1 : 0,
+    JSON.stringify(report.behaviorLog), JSON.stringify(report.snapshot),
+    report.viewport.width, report.viewport.height, now,
+  ).run();
+  return { id };
+}

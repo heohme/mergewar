@@ -1,16 +1,17 @@
-import { HEROES, MAX_BOARD, MINIONS, TRIBES } from "./data.js?v=40";
+import { HEROES, MAX_BOARD, MINIONS, TRIBES } from "./data.js?v=41";
 import {
   activateHeroPower, activateMinion, advanceRound, beginCombat, buyMinion, cancelPendingAction, canEndTurn,
   cardPurchaseCost, castSpell, chooseDiscover, createGame, gameResult, moveMinion, playCard, playerRank,
   reconcileBotUpgradeScaling, reconcileCardDefinitions, refreshShop, reorderMinion, resolvePendingTarget, resolveTriples, sellMinion, standings, toggleFreeze,
   startHeroPower, tavernRefreshCost, upgradeTavern,
-} from "./engine.js?v=40";
-import { attackVectorGeometry, battleFrameDelay, battleHeaderState, combatKeywordState, newCombatantIds } from "./battle-presentation.js?v=40";
+} from "./engine.js?v=41";
+import { attackVectorGeometry, battleFrameDelay, battleHeaderState, combatKeywordState, newCombatantIds } from "./battle-presentation.js?v=41";
 
 const app = document.querySelector("#app");
 const SAVE_KEY = "mergewar-save-v3";
-const CLIENT_VERSION = "prototype-v40";
+const CLIENT_VERSION = "prototype-v41";
 const MAX_BEHAVIOR_EVENTS = 300;
+const BUG_REPORT_LOG_LIMIT = 100;
 let game = loadGame();
 let selectedBoardId = null;
 let selectedCard = null;
@@ -21,6 +22,8 @@ let battleSpeed = 1;
 let pointerDrag = null;
 let dragState = null;
 let suppressClickUntil = 0;
+let bugReportOpen = false;
+let bugReportStatus = "IDLE";
 
 function createPlaytestMetadata() {
   const fallbackId = `playtest-${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -209,6 +212,37 @@ function heroPowerControl() {
   return `<div class="hero-power-control passive"><span>英雄技能 · 被动</span><b>${game.hero.tag}</b><small>${game.hero.description}</small></div>`;
 }
 
+const BUG_ACTION_LABELS = {
+  "game-start": "开始对局", buy: "购买卡牌", play: "随从上场", sell: "出售随从", refresh: "刷新酒馆",
+  upgrade: "升级酒馆", freeze: "冻结酒馆", combat: "进入战斗", continue: "返回酒馆", cast: "施放法术",
+  activate: "发动随从", "hero-power-use": "发动英雄技能", "hero-power-select": "选择英雄技能目标",
+  "drag-play": "拖动随从上场", "drag-cast": "拖动施放法术", "drag-sell": "拖动出售", "drag-reorder": "拖动调整站位",
+  "resolve-target": "选择效果目标", "bug-report-open": "打开快速反馈",
+};
+
+function bugReportTrigger(extraClass = "") {
+  return `<button class="bug-report-trigger ${extraClass}" type="button" data-action="bug-report-open" aria-label="快速反馈问题" title="快速反馈问题">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M9.8 9.2a2.35 2.35 0 0 1 4.55.75c0 1.8-2.35 2.05-2.35 3.65"></path><path d="M12 17.25h.01"></path></svg>
+  </button>`;
+}
+
+function renderBugReportDialog() {
+  if (!bugReportOpen) return "";
+  const playtest = ensurePlaytestMetadata();
+  const logs = playtest.behaviorLog.slice(-BUG_REPORT_LOG_LIMIT);
+  if (bugReportStatus === "SUBMITTED") return `<div class="bug-report-overlay"><section class="bug-report-dialog bug-report-done" role="dialog" aria-modal="true" aria-labelledby="bug-report-title">
+    <button class="bug-report-close" type="button" data-action="bug-report-close" aria-label="关闭">×</button><span>✓</span><h2 id="bug-report-title">问题已收到</h2><p>已保存你的描述和所选操作日志，我们会结合当时的游戏状态排查。</p><button type="button" data-action="bug-report-close">继续游戏</button>
+  </section></div>`;
+  const preview = logs.slice(-6).map((event) => `<li><b>第${event.round}回合</b><span>${BUG_ACTION_LABELS[event.action] || event.action}</span>${event.cardId ? `<small>${event.cardId}</small>` : ""}</li>`).join("");
+  return `<div class="bug-report-overlay"><form class="bug-report-dialog" id="bug-report-form" role="dialog" aria-modal="true" aria-labelledby="bug-report-title">
+    <div class="bug-report-heading"><div><small>快速反馈 · 不会结束当前对局</small><h2 id="bug-report-title">遇到了什么问题？</h2></div><button class="bug-report-close" type="button" data-action="bug-report-close" aria-label="关闭">×</button></div>
+    <label class="bug-report-description">一句话描述问题<textarea name="description" maxlength="500" rows="2" required autofocus placeholder="例如：拖动鲜血宝石后没有生效"></textarea></label>
+    <label class="bug-log-option"><input type="checkbox" name="includeLogs" checked><span><b>附带最近 ${logs.length} 条操作日志</b><small>默认已勾选，仅包含游戏内操作、回合和阵容状态</small></span></label>
+    <div class="bug-log-preview"><small>最近操作预览</small>${preview ? `<ol>${preview}</ol>` : `<p>当前还没有操作记录</p>`}</div>
+    <div class="bug-report-actions"><p class="bug-report-error" aria-live="polite"></p><button type="submit">提交 Bug</button></div>
+  </form></div>`;
+}
+
 function combatButtonLabel() {
   if (!game.player.board.length) return "先上阵一个随从";
   if (game.pendingDiscover || game.pendingAction) return "先完成当前选择";
@@ -225,7 +259,7 @@ function renderTopbar(displayState = {}) {
     <div class="hero-cluster"><div class="hero"><img src="${game.hero.imageUrl}" alt=""><div><b>${game.hero.name}</b><small>${game.hero.tag}</small></div></div>${heroPowerControl()}</div>
     <div class="resources"><span class="hp">♥ ${displayHealth}</span>${displayArmor ? `<span class="armor">◆ ${displayArmor}</span>` : ""}<span class="coin" title="当前铸币 / 本回合铸币额度">● ${game.player.gold}/${game.player.turnGoldCap || Math.max(game.player.gold, Math.min(game.player.goldCap || 10, game.round + 2))}</span><span># ${displayRank}</span></div>
     ${shopPhase ? `<button class="combat-button topbar-combat" data-action="combat" ${canEndTurn(game) ? "" : "disabled"}>${combatButtonLabel()}</button>` : ""}
-    <button class="quiet-button" data-action="new-game">重新开始</button>
+    <div class="topbar-tools"><button class="quiet-button" data-action="new-game">重新开始</button>${bugReportTrigger()}</div>
   </header>`;
 }
 
@@ -262,6 +296,7 @@ function renderShop() {
     </div>
     <footer class="action-bar"><span><b>当前提示</b>${game.messages[0]}</span><button class="combat-button mobile-combat" data-action="combat" ${canEndTurn(game) ? "" : "disabled"}>${combatButtonLabel()}</button></footer>
     ${game.pendingDiscover ? renderDiscover() : ""}
+    ${renderBugReportDialog()}
     <div class="rotate-hint">旋转设备，横屏体验完整酒馆</div>
   </main>`;
 }
@@ -301,7 +336,7 @@ function renderBattle() {
       <div class="versus-line"><span></span><b>VS</b><i class="impact-flash" aria-hidden="true"></i><span></span></div>
       <div class="combat-board player-board ${frame.event?.targetSide === "player" ? "impact-board" : ""}" data-count="${frame.player.length}"><div class="battle-side-badge"><small>我方</small><b>${game.hero.name}</b></div>${frame.player.map((item) => battleCard(item, "player", frame, playerArrivals)).join("") || `<div class="defeated">全军覆没</div>`}</div>
       <footer><div><p>${finished ? battleResultText(battle) : frame.event?.type === "attack" ? "高亮卡牌正在交战，数字为本次承受的伤害。" : frame.event?.type === "reborn" ? "复生：该随从以初始攻击力和1点生命值重新返回战场。" : "触发效果结算中，可暂停或调整播放速度。"}</p>${finished ? `<div class="battle-insights">${(battle.insights || []).map((text) => `<span>${text}</span>`).join("")}</div>` : ""}</div><button data-action="continue" ${finished ? "" : "disabled"}>${finished ? (!game.player.alive || game.round >= game.maxRounds ? "查看结果" : "返回酒馆") : "战斗结算中"}</button></footer>
-    </section></main>`;
+    </section>${renderBugReportDialog()}</main>`;
   requestAnimationFrame(() => positionAttackVector());
 }
 
@@ -369,11 +404,11 @@ function renderGameOver() {
       <label>有什么建议？<textarea name="suggestion" maxlength="1000" rows="3" placeholder="选填：哪里不顺、哪里不清楚，或最想调整什么"></textarea></label>
       <div class="feedback-actions"><p class="feedback-error" aria-live="polite"></p><button type="submit">提交反馈</button></div>
     </form>`;
-  app.innerHTML = `<main class="game-over"><section class="result-panel"><span class="brand-mark">${result.rank === 1 ? "♛" : "✦"}</span><small>本局结束</small><h1>${result.title}</h1><p class="result-summary">${result.summary}</p>
+  app.innerHTML = `<main class="game-over">${bugReportTrigger("floating")}<section class="result-panel"><span class="brand-mark">${result.rank === 1 ? "♛" : "✦"}</span><small>本局结束</small><h1>${result.title}</h1><p class="result-summary">${result.summary}</p>
     <div class="result-stats"><span><b>${game.round}</b>回合</span><span><b>${game.stats.wins}</b>胜利</span><span><b>${game.player.health}</b>剩余生命</span><span><b>${game.stats.triples}</b>三连</span><span><b>${game.stats.spells}</b>法术</span></div>
     <p class="ranking-rule">${result.rankingRule}</p>
     <div class="upload-status" aria-live="polite">${uploadStatusView(playtest)}</div></section>
-    <section class="result-feedback-stack">${feedback}<button class="restart-button" data-action="restart">${playtest.feedbackStatus === "SUBMITTED" ? "再来一局" : "暂不反馈，直接重开"}</button></section></main>`;
+    <section class="result-feedback-stack">${feedback}<button class="restart-button" data-action="restart">${playtest.feedbackStatus === "SUBMITTED" ? "再来一局" : "暂不反馈，直接重开"}</button></section>${renderBugReportDialog()}</main>`;
   if (playtest.gameUploadStatus === "PENDING") queueMicrotask(uploadCompletedGame);
 }
 
@@ -402,6 +437,38 @@ function feedbackPayload(form) {
     feedback: {
       rating: Number(data.get("rating")),
       suggestion: data.get("suggestion"),
+    },
+  };
+}
+
+const bugCardRef = (card) => ({
+  id: card.baseId || card.id || "", name: card.name || "", attack: card.attack || 0,
+  health: card.health || 0, golden: Boolean(card.golden),
+});
+
+function bugReportPayload(form) {
+  const data = new FormData(form);
+  const playtest = ensurePlaytestMetadata();
+  const includeLogs = data.get("includeLogs") === "on";
+  return {
+    report: {
+      sessionId: playtest.sessionId,
+      clientVersion: CLIENT_VERSION,
+      heroId: game.hero.id,
+      heroName: game.hero.name,
+      round: game.round,
+      phase: game.phase,
+      description: data.get("description"),
+      includeLogs,
+      behaviorLog: includeLogs ? playtest.behaviorLog.slice(-BUG_REPORT_LOG_LIMIT) : [],
+      snapshot: {
+        health: game.player.health, armor: game.player.armor, gold: game.player.gold,
+        goldLimit: game.player.turnGoldCap, tier: game.player.tier, rank: playerRank(game),
+        board: game.player.board.map(bugCardRef), hand: game.player.hand.map(bugCardRef),
+        shop: game.player.shop.map(bugCardRef), message: game.messages[0] || "",
+        battleFrame, battleFrames: game.battle?.frames?.length || 0,
+      },
+      viewport: { width: window.innerWidth, height: window.innerHeight },
     },
   };
 }
@@ -452,6 +519,29 @@ async function submitFeedback(form) {
     saveGame(); render();
   } catch (error) {
     errorBox.textContent = error.message === "Failed to fetch" ? "无法连接反馈接口，请确认使用 npm run dev 启动项目。" : error.message;
+    button.disabled = false; button.textContent = "重新提交";
+  }
+}
+
+async function submitBugReport(form) {
+  const button = form.querySelector('button[type="submit"]');
+  const errorBox = form.querySelector(".bug-report-error");
+  recordBehavior("bug-report-submit"); saveGame();
+  button.disabled = true; button.textContent = "正在提交…"; errorBox.textContent = "";
+  try {
+    const response = await fetch("/api/bug-reports", {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify(bugReportPayload(form)),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || "提交失败，请稍后重试");
+    const playtest = ensurePlaytestMetadata();
+    playtest.lastBugReportId = result.id;
+    playtest.lastBugReportAt = Date.now();
+    bugReportStatus = "SUBMITTED";
+    saveGame(); render();
+  } catch (error) {
+    errorBox.textContent = error.message === "Failed to fetch" ? "暂时无法连接反馈接口，请稍后重试。" : error.message;
     button.disabled = false; button.textContent = "重新提交";
   }
 }
@@ -574,6 +664,8 @@ app.addEventListener("click", (event) => {
   const trackedCard = id ? findCard(id) : null;
   const actions = {
     resume: () => {},
+    "bug-report-open": () => { bugReportOpen = true; bugReportStatus = "IDLE"; battlePlaying = false; queueMicrotask(() => app.querySelector('#bug-report-form textarea')?.focus()); return true; },
+    "bug-report-close": () => { bugReportOpen = false; bugReportStatus = "IDLE"; return true; },
     buy: () => buyMinion(game, id), play: () => playCard(game, id), sell: () => sellMinion(game, id),
     activate: () => activateMinion(game, id), "hero-power-select": () => startHeroPower(game), "hero-power-use": () => activateHeroPower(game),
     upgrade: () => upgradeTavern(game), refresh: () => refreshShop(game), freeze: () => toggleFreeze(game),
@@ -587,8 +679,8 @@ app.addEventListener("click", (event) => {
     "battle-next": () => { battlePlaying = false; battleFrame = Math.min(game.battle.frames.length - 1, battleFrame + 1); },
     "battle-skip": () => { battlePlaying = false; battleFrame = game.battle.frames.length - 1; },
     continue: () => { battlePlaying = false; advanceRound(game); battleFrame = 0; },
-    restart: () => { game = null; localStorage.removeItem(SAVE_KEY); },
-    "new-game": () => { if (confirm("确定放弃当前对局并重新选择英雄吗？")) { game = null; localStorage.removeItem(SAVE_KEY); } },
+    restart: () => { bugReportOpen = false; bugReportStatus = "IDLE"; game = null; localStorage.removeItem(SAVE_KEY); },
+    "new-game": () => { if (confirm("确定放弃当前对局并重新选择英雄吗？")) { bugReportOpen = false; bugReportStatus = "IDLE"; game = null; localStorage.removeItem(SAVE_KEY); } },
   };
   const actionResult = actions[action]?.();
   if (action && !["restart", "new-game"].includes(action) && game) recordBehavior(action, trackedCard, actionResult);
@@ -599,9 +691,13 @@ app.addEventListener("click", (event) => {
 });
 
 app.addEventListener("submit", (event) => {
-  if (!event.target.matches("#feedback-form")) return;
-  event.preventDefault();
-  submitFeedback(event.target);
+  if (event.target.matches("#feedback-form")) { event.preventDefault(); submitFeedback(event.target); return; }
+  if (event.target.matches("#bug-report-form")) { event.preventDefault(); submitBugReport(event.target); }
+});
+
+window.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape" || !bugReportOpen) return;
+  bugReportOpen = false; bugReportStatus = "IDLE"; recordBehavior("bug-report-close"); saveGame(); render();
 });
 
 app.addEventListener("dragstart", (event) => {

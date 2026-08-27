@@ -4,7 +4,7 @@ import { extname, join, normalize, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { randomUUID } from "node:crypto";
 import {
-  isClientError, normalizeCompletion, normalizeSubmission, summarizeSubmissions,
+  isClientError, normalizeBugReport, normalizeCompletion, normalizeSubmission, summarizeSubmissions,
 } from "../functions-shared/playtests.js";
 
 const DEFAULT_ROOT = fileURLToPath(new URL("../", import.meta.url));
@@ -47,6 +47,15 @@ async function saveRecord(dataFile, completion, feedback = null) {
   await mkdir(resolve(dataFile, ".."), { recursive: true });
   await writeFile(dataFile, `${entries.map((item) => JSON.stringify(item)).join("\n")}\n`, "utf8");
   return { entry, duplicate };
+}
+
+async function saveBugReport(dataFile, report) {
+  const entries = await readEntries(dataFile);
+  const entry = { id: randomUUID(), type: "BUG_REPORT", receivedAt: new Date().toISOString(), report };
+  entries.push(entry);
+  await mkdir(resolve(dataFile, ".."), { recursive: true });
+  await writeFile(dataFile, `${entries.map((item) => JSON.stringify(item)).join("\n")}\n`, "utf8");
+  return entry;
 }
 
 function sendJson(response, status, body) {
@@ -98,6 +107,11 @@ export function createMergeWarServer(options = {}) {
         const submission = normalizeSubmission(await readJson(request));
         const saved = await saveRecord(dataFile, { schemaVersion: submission.schemaVersion, game: submission.game }, submission.feedback);
         return sendJson(response, saved.duplicate ? 200 : 201, { ok: true, duplicate: saved.duplicate, id: saved.entry.id });
+      }
+      if (request.method === "POST" && url.pathname === "/api/bug-reports") {
+        const { report } = normalizeBugReport(await readJson(request));
+        const saved = await saveBugReport(dataFile, report);
+        return sendJson(response, 201, { ok: true, id: saved.id });
       }
       if (request.method === "GET" && url.pathname === "/api/playtests/summary") {
         return sendJson(response, 200, summarizeSubmissions(await readEntries(dataFile)));
