@@ -1,17 +1,17 @@
-import { HEROES, MAX_BOARD, MINIONS, TRIBES } from "./data.js?v=41";
+import { HEROES, MAX_BOARD, MINIONS, TRIBES } from "./data.js?v=42";
 import {
   activateHeroPower, activateMinion, advanceRound, beginCombat, buyMinion, cancelPendingAction, canEndTurn,
   cardPurchaseCost, castSpell, chooseDiscover, createGame, gameResult, moveMinion, playCard, playerRank,
   reconcileBotUpgradeScaling, reconcileCardDefinitions, refreshShop, reorderMinion, resolvePendingTarget, resolveTriples, sellMinion, standings, toggleFreeze,
   startHeroPower, tavernRefreshCost, upgradeTavern,
-} from "./engine.js?v=41";
-import { attackVectorGeometry, battleFrameDelay, battleHeaderState, combatKeywordState, newCombatantIds } from "./battle-presentation.js?v=41";
+} from "./engine.js?v=42";
+import { attackVectorGeometry, battleFrameDelay, battleHeaderState, combatKeywordState, newCombatantIds } from "./battle-presentation.js?v=42";
 
 const app = document.querySelector("#app");
 const SAVE_KEY = "mergewar-save-v3";
-const CLIENT_VERSION = "prototype-v41";
+const CLIENT_VERSION = "prototype-v42";
 const MAX_BEHAVIOR_EVENTS = 300;
-const BUG_REPORT_LOG_LIMIT = 100;
+const BUG_REPORT_LOG_LIMIT = MAX_BEHAVIOR_EVENTS;
 let game = loadGame();
 let selectedBoardId = null;
 let selectedCard = null;
@@ -237,8 +237,8 @@ function renderBugReportDialog() {
   return `<div class="bug-report-overlay"><form class="bug-report-dialog" id="bug-report-form" role="dialog" aria-modal="true" aria-labelledby="bug-report-title">
     <div class="bug-report-heading"><div><small>快速反馈 · 不会结束当前对局</small><h2 id="bug-report-title">遇到了什么问题？</h2></div><button class="bug-report-close" type="button" data-action="bug-report-close" aria-label="关闭">×</button></div>
     <label class="bug-report-description">一句话描述问题<textarea name="description" maxlength="500" rows="2" required autofocus placeholder="例如：拖动鲜血宝石后没有生效"></textarea></label>
-    <label class="bug-log-option"><input type="checkbox" name="includeLogs" checked><span><b>附带最近 ${logs.length} 条操作日志</b><small>默认已勾选，仅包含游戏内操作、回合和阵容状态</small></span></label>
-    <div class="bug-log-preview"><small>最近操作预览</small>${preview ? `<ol>${preview}</ol>` : `<p>当前还没有操作记录</p>`}</div>
+    <label class="bug-log-option"><input type="checkbox" name="includeLogs" checked><span><b>附带本局全部 ${logs.length} 条操作日志</b><small>默认已勾选，仅包含游戏内操作、回合和阵容状态</small></span></label>
+    <div class="bug-log-preview"><small>最近 ${Math.min(6, logs.length)} 条预览 · 提交包含本局全部日志</small>${preview ? `<ol>${preview}</ol>` : `<p>当前还没有操作记录</p>`}</div>
     <div class="bug-report-actions"><p class="bug-report-error" aria-live="polite"></p><button type="submit">提交 Bug</button></div>
   </form></div>`;
 }

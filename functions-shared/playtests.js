@@ -133,7 +133,7 @@ export function normalizeBugReport(input) {
       phase: cleanText(report.phase, 20),
       description,
       includeLogs,
-      behaviorLog: includeLogs ? normalizeBehaviorLog(report.behaviorLog).slice(-100) : [],
+      behaviorLog: includeLogs ? normalizeBehaviorLog(report.behaviorLog).slice(-300) : [],
       snapshot: normalizeBugSnapshot(report.snapshot),
       viewport: {
         width: Math.min(10000, nonNegativeInteger(report.viewport?.width)),

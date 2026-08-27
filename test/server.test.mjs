@@ -53,6 +53,11 @@ assert.equal(bugReport.report.description, "拖动鲜血宝石后没有生效");
 assert.equal(bugReport.report.behaviorLog.length, 2);
 assert.equal(bugReport.report.snapshot.board[0].name, "测试随从");
 assert.deepEqual(bugReport.report.viewport, { width: 616, height: 414 });
+const fullSessionLog = Array.from({ length: 150 }, (_, index) => ({
+  ...sample.game.behaviorLog[0], atMs: index * 100, action: `action-${index}`,
+}));
+assert.equal(normalizeBugReport({ report: { ...bugReport.report, behaviorLog: fullSessionLog } }).report.behaviorLog.length, 150, "应完整保留超过100条的本局日志");
+assert.equal(normalizeBugReport({ report: { ...bugReport.report, behaviorLog: [...fullSessionLog, ...fullSessionLog, ...fullSessionLog] } }).report.behaviorLog.length, 300, "异常超长日志应限制为本局客户端最大容量");
 assert.equal(normalizeBugReport({ report: { ...bugReport.report, includeLogs: false } }).report.behaviorLog.length, 0, "取消日志选项后不应上传行为日志");
 assert.throws(() => normalizeBugReport({ report: { ...bugReport.report, description: "" } }), /请填写问题描述/);
 
