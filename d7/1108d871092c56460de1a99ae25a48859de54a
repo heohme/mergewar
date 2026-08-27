@@ -1,0 +1,25 @@
+src/app.js
+  s_a10de54ede7099::t_b81ca1bc254753 1,7-8,12,14,240-241
+index.html
+  s_a10de54ede7099::t_b81ca1bc254753 8,12
+test/server.test.mjs
+  s_a10de54ede7099::t_b81ca1bc254753 56-60
+functions-shared/playtests.js
+  s_a10de54ede7099::t_b81ca1bc254753 136
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.5",
+  "base_commit_sha": "d71108d871092c56460de1a99ae25a48859de54a",
+  "prompts": {},
+  "sessions": {
+    "s_a10de54ede7099": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a03210-cdeb-74a3-a02a-8afa00d853d1",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "贺庆阳 <heqingyang@xiaohongshu.com>"
+    }
+  }
+}
