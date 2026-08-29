@@ -1,15 +1,15 @@
-import { HEROES, MAX_BOARD, MINIONS, TRIBES } from "./data.js?v=42";
+import { HEROES, MAX_BOARD, MINIONS, TRIBES } from "./data.js?v=43";
 import {
   activateHeroPower, activateMinion, advanceRound, beginCombat, buyMinion, cancelPendingAction, canEndTurn,
   cardPurchaseCost, castSpell, chooseDiscover, createGame, gameResult, moveMinion, playCard, playerRank,
   reconcileBotUpgradeScaling, reconcileCardDefinitions, refreshShop, reorderMinion, resolvePendingTarget, resolveTriples, sellMinion, standings, toggleFreeze,
   startHeroPower, tavernRefreshCost, upgradeTavern,
-} from "./engine.js?v=42";
-import { attackVectorGeometry, battleFrameDelay, battleHeaderState, combatKeywordState, newCombatantIds } from "./battle-presentation.js?v=42";
+} from "./engine.js?v=43";
+import { attackVectorGeometry, battleFrameDelay, battleHeaderState, combatKeywordState, newCombatantIds } from "./battle-presentation.js?v=43";
 
 const app = document.querySelector("#app");
 const SAVE_KEY = "mergewar-save-v3";
-const CLIENT_VERSION = "prototype-v42";
+const CLIENT_VERSION = "prototype-v43";
 const MAX_BEHAVIOR_EVENTS = 300;
 const BUG_REPORT_LOG_LIMIT = MAX_BEHAVIOR_EVENTS;
 let game = loadGame();
@@ -259,7 +259,7 @@ function renderTopbar(displayState = {}) {
     <div class="hero-cluster"><div class="hero"><img src="${game.hero.imageUrl}" alt=""><div><b>${game.hero.name}</b><small>${game.hero.tag}</small></div></div>${heroPowerControl()}</div>
     <div class="resources"><span class="hp">♥ ${displayHealth}</span>${displayArmor ? `<span class="armor">◆ ${displayArmor}</span>` : ""}<span class="coin" title="当前铸币 / 本回合铸币额度">● ${game.player.gold}/${game.player.turnGoldCap || Math.max(game.player.gold, Math.min(game.player.goldCap || 10, game.round + 2))}</span><span># ${displayRank}</span></div>
     ${shopPhase ? `<button class="combat-button topbar-combat" data-action="combat" ${canEndTurn(game) ? "" : "disabled"}>${combatButtonLabel()}</button>` : ""}
-    <div class="topbar-tools"><button class="quiet-button" data-action="new-game">重新开始</button>${bugReportTrigger()}</div>
+    <div class="topbar-tools"><button class="quiet-button" data-action="new-game" aria-label="重新开始" title="重新开始">重新开始</button>${bugReportTrigger()}</div>
   </header>`;
 }
 

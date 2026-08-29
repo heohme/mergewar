@@ -991,3 +991,12 @@ button:disabled { opacity: .36; cursor: not-allowed; }
   .bug-report-actions > button { min-width: 100px; min-height: 31px; padding: 5px 12px; font-size: 8px; }
   .bug-report-done { width: min(430px,calc(100vw - 12px)); min-height: 230px; }
 }
+
+/* Compact topbar tools: keep restart and quick feedback in the first row. */
+@media (max-width: 1179px) {
+  .topbar { padding-right: max(84px,calc(env(safe-area-inset-right) + 78px)); }
+  .topbar-tools { position: absolute; top: 50%; right: max(7px,env(safe-area-inset-right)); width: auto; height: 34px; grid-column: auto; gap: 4px; transform: translateY(-50%); }
+  .topbar .topbar-tools .quiet-button { width: 34px; height: 34px; min-width: 34px; flex: 0 0 34px; display: grid; place-items: center; overflow: hidden; padding: 0; border-radius: 50%; color: #e8ddef; font-size: 0; background: rgba(45,37,53,.9); }
+  .topbar .topbar-tools .quiet-button::before { content: "↻"; font-size: 18px; line-height: 1; }
+  .topbar-tools .bug-report-trigger { width: 34px; height: 34px; flex-basis: 34px; }
+}
